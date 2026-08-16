@@ -7,6 +7,7 @@ Projekt przygotowany w **Godot 4.4** (GDScript) i gotowy do eksportu do pliku `.
 ![Źródła](docs/screenshots/zrodla.png)
 ![Moduły](docs/screenshots/moduly.png)
 ![Przypadki testowe](docs/screenshots/przypadki.png)
+![Raport błędów](docs/screenshots/raport_bledow.png)
 
 ## Co potrafi program
 
@@ -23,6 +24,20 @@ Projekt przygotowany w **Godot 4.4** (GDScript) i gotowy do eksportu do pliku `.
    - **plan testów** (struktura wg IEEE 829/ISO 29119: cel, zakres, strategia, środowisko, kryteria wejścia/wyjścia, ryzyka, pracochłonność, zestawienie przypadków),
    - **przypadki testowe** (ID, moduł, typ, priorytet, warunki wstępne, kroki, dane testowe, oczekiwany rezultat) — reguły rozpoznają m.in. logowanie, rejestrację, formularze, wyszukiwanie, filtry, listy, import/eksport plików, płatności, API, uprawnienia, raporty, ustawienia i daty; generowane są testy pozytywne, negatywne, brzegowe i bezpieczeństwa (do wyboru).
 6. **Eksport** do `.md` (Markdown), `.csv` (średniki — przyjazne polskiemu Excelowi, importowalne do Jiry/TestRaila) oraz `.html` (gotowy do druku).
+7. **Raport błędów** — formularz zgłoszenia (tytuł, moduł, powiązany przypadek testowy, waga, środowisko, kroki reprodukcji, rezultat aktualny/oczekiwany) z możliwością **dołączenia zrzutów ekranu**: z pliku (`.png`, `.jpg`, `.webp`, `.bmp`) albo **wklejenia wprost ze schowka** (Print Screen / Shift+Win+S → „Wklej ze schowka”). Eksport raportu do:
+   - `.html` — zrzuty **osadzone w jednym pliku** (base64) — najwygodniejsze do wysłania,
+   - `.md` — zrzuty zapisywane w podfolderze `<nazwa>_zalaczniki/` obok pliku,
+   - `.csv` — tabela zgłoszeń (bez obrazów, z nazwami załączników).
+
+## Praca bez dokumentacji
+
+Dokumentacja jest zalecana, ale **niewymagana**. Jeśli masz tylko aplikację:
+
+- **folder projektu** — moduły zostaną wykryte ze struktury katalogów,
+- **adres URL** działającej aplikacji — moduły z nagłówków strony,
+- **sam plik binarny (.exe)** — program utworzy moduł ogólny (testy eksploracyjne/dymne),
+
+a w zakładce **„2. Moduły i opcje”** możesz **dopisać własne moduły ręcznie** (pole „Dodaj własny moduł”). Generator dobiera reguły także po nazwie modułu — wpisanie np. „Logowanie”, „Koszyk”, „Wyszukiwarka” czy „Raporty” od razu da pełne zestawy przypadków dla tych obszarów.
 
 Generator działa **w pełni offline** — nie wysyła danych do żadnych usług; internet jest potrzebny tylko wtedy, gdy sam podasz adres URL do pobrania.
 
@@ -66,6 +81,7 @@ scripts/doc_loader.gd    wczytywanie z dysku/URL, konwersja HTML → tekst, skan
 scripts/module_analyzer.gd  podział dokumentacji na moduły + ekstrakcja wymagań
 scripts/test_generator.gd   regułowy generator planu i przypadków testowych
 scripts/exporter.gd      eksport do Markdown / CSV / HTML
+scripts/bug_reporter.gd  zgłoszenia błędów ze zrzutami ekranu + eksport raportu
 scripts/selftest.gd      test dymny logiki (headless)
 assets/                  pakiet assetów UI (przyciski, ikony, zakładki, styl okna)
 fonts/                   czcionka Inter (polskie znaki)

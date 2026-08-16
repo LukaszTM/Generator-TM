@@ -67,7 +67,34 @@ func _init() -> void:
 	var tmp := OS.get_cache_dir().path_join("generator_tm_selftest.md")
 	failures += _check(Exporter.save_text(tmp, md) == "", "zapis pliku na dysk")
 
-	# 7. Pełna generacja wszystkich modułów.
+	# 7. Raport błędów ze zrzutem ekranu.
+	var bug := BugReporter.BugReport.new()
+	bug.id = "BUG-001"
+	bug.title = "Logowanie akceptuje puste hasło"
+	bug.module = "Logowanie i konta"
+	bug.severity = "Krytyczny"
+	bug.environment = "Windows 11, Chrome 126"
+	bug.steps = "Otwórz ekran logowania\nPozostaw hasło puste\nKliknij Zaloguj"
+	bug.actual = "Użytkownik zostaje zalogowany."
+	bug.expected = "Walidacja blokuje logowanie."
+	bug.date = "2026-08-16 12:00:00"
+	var shot := BugReporter.Attachment.new()
+	shot.name = "ekran_logowania.png"
+	shot.image = Image.create(8, 8, false, Image.FORMAT_RGBA8)
+	shot.image.fill(Color.RED)
+	bug.attachments.append(shot)
+	var bug_html := BugReporter.to_html([bug], "Sklep testowy")
+	failures += _check(bug_html.contains("data:image/png;base64,"), "raport błędów HTML z osadzonym zrzutem")
+	failures += _check(bug_html.contains("BUG-001"), "raport błędów HTML zawiera zgłoszenie")
+	var bug_dir := OS.get_cache_dir().path_join("generator_tm_bugtest")
+	var bug_md_path := bug_dir.path_join("raport.md")
+	DirAccess.make_dir_recursive_absolute(bug_dir)
+	failures += _check(BugReporter.export(bug_md_path, "md", [bug], "Sklep testowy") == "", "eksport raportu błędów do Markdown")
+	failures += _check(FileAccess.file_exists(bug_dir.path_join("raport_zalaczniki/BUG-001_zrzut_1.png")), "zapis zrzutu ekranu obok pliku Markdown")
+	var bug_csv := BugReporter.to_csv([bug])
+	failures += _check(bug_csv.contains("ekran_logowania.png"), "raport błędów CSV z nazwą załącznika")
+
+	# 8. Pełna generacja wszystkich modułów.
 	var out_all := TestGenerator.generate(modules, TestGenerator.Options.new())
 	print("Moduły: %d | Przypadki (1 moduł): %d | Przypadki (wszystkie): %d" % [modules.size(), out.cases.size(), out_all.cases.size()])
 

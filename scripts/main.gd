@@ -11,6 +11,9 @@ var doc_result: DocLoader.Result = null
 var app_result: DocLoader.Result = null
 var modules: Array = []            # Array[ModuleAnalyzer.ModuleInfo]
 var output: TestGenerator.Output = null
+var bugs: Array = []               # Array[BugReporter.BugReport]
+var pending_attachments: Array = []  # Array[BugReporter.Attachment] (formularz)
+var bug_counter := 0
 
 # --- Węzły UI (tworzone w kodzie) ---
 var tabs: TabContainer
@@ -33,6 +36,8 @@ var opt_boundary: CheckBox
 var opt_security: CheckBox
 var generate_button: Button
 
+var manual_module_edit: LineEdit
+
 var plan_view: TextEdit
 var cases_tree: Tree
 var case_details: TextEdit
@@ -40,12 +45,29 @@ var export_scope: OptionButton
 var export_format: OptionButton
 var export_status: Label
 
+var bug_title_edit: LineEdit
+var bug_module_option: OptionButton
+var bug_case_option: OptionButton
+var bug_severity_option: OptionButton
+var bug_env_edit: LineEdit
+var bug_reporter_edit: LineEdit
+var bug_steps_edit: TextEdit
+var bug_actual_edit: TextEdit
+var bug_expected_edit: TextEdit
+var bug_attach_box: HFlowContainer
+var bugs_tree: Tree
+var bug_details: TextEdit
+var bug_export_format: OptionButton
+var bug_export_status: Label
+
 var http: HTTPRequest
 var error_dialog: AcceptDialog
 var open_doc_dialog: FileDialog
 var open_app_file_dialog: FileDialog
 var open_app_dir_dialog: FileDialog
 var save_dialog: FileDialog
+var bug_attach_dialog: FileDialog
+var bug_save_dialog: FileDialog
 
 
 func _ready() -> void:
@@ -118,12 +140,14 @@ func _build_layout() -> void:
 	tabs.add_child(_build_plan_tab())
 	tabs.add_child(_build_cases_tab())
 	tabs.add_child(_build_export_tab())
+	tabs.add_child(_build_bugs_tab())
 	# Tytuły ustawiane wprost — nazwy węzłów nie mogą zawierać kropki.
-	var tab_titles := ["1. Źródła", "2. Moduły i opcje", "3. Plan testów", "4. Przypadki testowe", "5. Eksport"]
-	var tab_icons := [UITheme.ICON_FOLDER, UITheme.ICON_FILTER, UITheme.ICON_DOC, UITheme.ICON_CLIPBOARD, UITheme.ICON_EXPORT]
+	var tab_titles := ["1. Źródła", "2. Moduły i opcje", "3. Plan testów", "4. Przypadki testowe", "5. Eksport", "6. Raport błędów"]
+	var tab_icons := [UITheme.ICON_FOLDER, UITheme.ICON_FILTER, UITheme.ICON_DOC, UITheme.ICON_CLIPBOARD, UITheme.ICON_EXPORT, UITheme.ICON_SHIELD]
 	for i in tab_icons.size():
 		tabs.set_tab_title(i, tab_titles[i])
 		tabs.set_tab_icon(i, _tab_icon(tab_icons[i]))
+	tabs.tab_changed.connect(_on_tab_changed)
 
 	# --- Pasek stanu ---
 	var status_bar := PanelContainer.new()
@@ -186,12 +210,12 @@ func _build_sources_tab() -> Control:
 	page.add_child(outer)
 
 	# Karta: dokumentacja
-	var doc_parts := _card("Dokumentacja aplikacji (wymagana)", UITheme.ICON_DOC)
+	var doc_parts := _card("Dokumentacja aplikacji (zalecana)", UITheme.ICON_DOC)
 	outer.add_child(doc_parts[0])
 	var doc_box: VBoxContainer = doc_parts[1]
 	var doc_hint := Label.new()
 	doc_hint.theme_type_variation = "DimLabel"
-	doc_hint.text = "Wskaż plik na dysku (.md, .txt, .html, .json, .csv) albo wklej adres URL strony z dokumentacją."
+	doc_hint.text = "Wskaż plik na dysku (.md, .txt, .html, .json, .csv) albo wklej adres URL strony z dokumentacją.\nNie masz dokumentacji? Wystarczy samo źródło aplikacji poniżej — moduły wykryjemy ze struktury folderu lub strony, a brakujące dodasz ręcznie w zakładce 2."
 	doc_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	doc_box.add_child(doc_hint)
 	var doc_row := HBoxContainer.new()
@@ -281,6 +305,18 @@ func _build_modules_tab() -> Control:
 	var none_btn := _button("Odznacz wszystkie")
 	none_btn.pressed.connect(func() -> void: _set_all_modules(false))
 	sel_row.add_child(none_btn)
+	# Ręczne dodawanie modułów — przydatne, gdy nie ma dokumentacji.
+	var manual_row := HBoxContainer.new()
+	manual_row.add_theme_constant_override("separation", 8)
+	left.add_child(manual_row)
+	manual_module_edit = LineEdit.new()
+	manual_module_edit.placeholder_text = "Dodaj własny moduł, np. „Logowanie”, „Koszyk”, „Raporty”…"
+	manual_module_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	manual_module_edit.text_submitted.connect(func(_t: String) -> void: _on_add_manual_module())
+	manual_row.add_child(manual_module_edit)
+	var manual_btn := _button("Dodaj moduł", UITheme.ICON_PENCIL)
+	manual_btn.pressed.connect(_on_add_manual_module)
+	manual_row.add_child(manual_btn)
 	modules_tree = Tree.new()
 	modules_tree.columns = 3
 	modules_tree.column_titles_visible = true
@@ -434,6 +470,163 @@ func _build_export_tab() -> Control:
 	return page
 
 
+# ---------------- Zakładka 6: Raport błędów ----------------
+func _build_bugs_tab() -> Control:
+	var page := HSplitContainer.new()
+	page.name = "RaportBledow"
+	page.split_offset = 620
+
+	# --- Lewa strona: formularz zgłoszenia ---
+	var form_scroll := ScrollContainer.new()
+	form_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.add_child(form_scroll)
+	var form_parts := _card("Nowe zgłoszenie błędu", UITheme.ICON_PENCIL)
+	var form_card: PanelContainer = form_parts[0]
+	form_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	form_scroll.add_child(form_card)
+	var form: VBoxContainer = form_parts[1]
+
+	form.add_child(_field_label("Tytuł błędu:"))
+	bug_title_edit = LineEdit.new()
+	bug_title_edit.placeholder_text = "np. Logowanie akceptuje puste hasło"
+	form.add_child(bug_title_edit)
+
+	var row1 := HBoxContainer.new()
+	row1.add_theme_constant_override("separation", 12)
+	form.add_child(row1)
+	var col_mod := VBoxContainer.new()
+	col_mod.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row1.add_child(col_mod)
+	col_mod.add_child(_field_label("Moduł:"))
+	bug_module_option = OptionButton.new()
+	col_mod.add_child(bug_module_option)
+	var col_sev := VBoxContainer.new()
+	col_sev.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row1.add_child(col_sev)
+	col_sev.add_child(_field_label("Waga błędu:"))
+	bug_severity_option = OptionButton.new()
+	for s in BugReporter.severity_levels():
+		bug_severity_option.add_item(s)
+	bug_severity_option.selected = 2
+	col_sev.add_child(bug_severity_option)
+
+	form.add_child(_field_label("Powiązany przypadek testowy (opcjonalnie):"))
+	bug_case_option = OptionButton.new()
+	form.add_child(bug_case_option)
+
+	var row2 := HBoxContainer.new()
+	row2.add_theme_constant_override("separation", 12)
+	form.add_child(row2)
+	var col_env := VBoxContainer.new()
+	col_env.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row2.add_child(col_env)
+	col_env.add_child(_field_label("Środowisko:"))
+	bug_env_edit = LineEdit.new()
+	bug_env_edit.placeholder_text = "np. Windows 11, Chrome 126, wersja 1.2.3"
+	col_env.add_child(bug_env_edit)
+	var col_rep := VBoxContainer.new()
+	col_rep.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row2.add_child(col_rep)
+	col_rep.add_child(_field_label("Zgłaszający:"))
+	bug_reporter_edit = LineEdit.new()
+	bug_reporter_edit.placeholder_text = "np. Jan Kowalski"
+	col_rep.add_child(bug_reporter_edit)
+
+	form.add_child(_field_label("Kroki reprodukcji (każdy krok w nowej linii):"))
+	bug_steps_edit = TextEdit.new()
+	bug_steps_edit.custom_minimum_size = Vector2(0, 90)
+	bug_steps_edit.placeholder_text = "Otwórz ekran logowania\nPozostaw pole hasła puste\nKliknij „Zaloguj”"
+	form.add_child(bug_steps_edit)
+
+	form.add_child(_field_label("Rezultat aktualny (co się dzieje):"))
+	bug_actual_edit = TextEdit.new()
+	bug_actual_edit.custom_minimum_size = Vector2(0, 56)
+	form.add_child(bug_actual_edit)
+
+	form.add_child(_field_label("Rezultat oczekiwany (co powinno się dziać):"))
+	bug_expected_edit = TextEdit.new()
+	bug_expected_edit.custom_minimum_size = Vector2(0, 56)
+	form.add_child(bug_expected_edit)
+
+	form.add_child(_field_label("Zrzuty ekranu:"))
+	var attach_row := HBoxContainer.new()
+	attach_row.add_theme_constant_override("separation", 8)
+	form.add_child(attach_row)
+	var attach_file_btn := _button("Dodaj z pliku…", UITheme.ICON_FOLDER)
+	attach_file_btn.pressed.connect(func() -> void: bug_attach_dialog.popup_centered_ratio(0.7))
+	attach_row.add_child(attach_file_btn)
+	var attach_clip_btn := _button("Wklej ze schowka", UITheme.ICON_CLIPBOARD)
+	attach_clip_btn.pressed.connect(_on_paste_screenshot)
+	attach_row.add_child(attach_clip_btn)
+	bug_attach_box = HFlowContainer.new()
+	bug_attach_box.add_theme_constant_override("h_separation", 8)
+	bug_attach_box.add_theme_constant_override("v_separation", 8)
+	form.add_child(bug_attach_box)
+
+	var add_row := HBoxContainer.new()
+	add_row.alignment = BoxContainer.ALIGNMENT_END
+	form.add_child(add_row)
+	var add_bug_btn := _button("Dodaj zgłoszenie do raportu  →", UITheme.ICON_SHIELD, "PrimaryButton")
+	add_bug_btn.pressed.connect(_on_add_bug)
+	add_row.add_child(add_bug_btn)
+
+	# --- Prawa strona: lista zgłoszeń + eksport ---
+	var right := VBoxContainer.new()
+	right.add_theme_constant_override("separation", 10)
+	page.add_child(right)
+	var list_label := Label.new()
+	list_label.theme_type_variation = "CardTitle"
+	list_label.text = "Zgłoszenia w raporcie"
+	right.add_child(list_label)
+	bugs_tree = Tree.new()
+	bugs_tree.columns = 4
+	bugs_tree.column_titles_visible = true
+	bugs_tree.set_column_title(0, "ID")
+	bugs_tree.set_column_title(1, "Tytuł")
+	bugs_tree.set_column_title(2, "Waga")
+	bugs_tree.set_column_title(3, "Zrzuty")
+	bugs_tree.set_column_expand(0, false)
+	bugs_tree.set_column_expand(1, true)
+	bugs_tree.set_column_expand(2, false)
+	bugs_tree.set_column_expand(3, false)
+	bugs_tree.set_column_custom_minimum_width(0, 100)
+	bugs_tree.set_column_custom_minimum_width(2, 100)
+	bugs_tree.set_column_custom_minimum_width(3, 70)
+	bugs_tree.hide_root = true
+	bugs_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	bugs_tree.item_selected.connect(_on_bug_selected)
+	right.add_child(bugs_tree)
+	var del_row := HBoxContainer.new()
+	del_row.add_theme_constant_override("separation", 8)
+	right.add_child(del_row)
+	var del_btn := _button("Usuń zaznaczone zgłoszenie", UITheme.ICON_FILTER, "DangerButton")
+	del_btn.pressed.connect(_on_delete_bug)
+	del_row.add_child(del_btn)
+	bug_details = TextEdit.new()
+	bug_details.editable = false
+	bug_details.custom_minimum_size = Vector2(0, 150)
+	bug_details.placeholder_text = "Zaznacz zgłoszenie, aby zobaczyć szczegóły."
+	bug_details.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	right.add_child(bug_details)
+	right.add_child(_field_label("Format raportu:"))
+	bug_export_format = OptionButton.new()
+	bug_export_format.add_item("HTML (.html) — zrzuty osadzone w jednym pliku (zalecane)")
+	bug_export_format.add_item("Markdown (.md) — zrzuty w podfolderze obok pliku")
+	bug_export_format.add_item("CSV (.csv) — tabela bez obrazów")
+	right.add_child(bug_export_format)
+	var exp_row := HBoxContainer.new()
+	exp_row.add_theme_constant_override("separation", 8)
+	right.add_child(exp_row)
+	var exp_btn := _button("Zapisz raport błędów…", UITheme.ICON_EXPORT, "PrimaryButton")
+	exp_btn.pressed.connect(_on_export_bugs)
+	exp_row.add_child(exp_btn)
+	bug_export_status = Label.new()
+	bug_export_status.theme_type_variation = "DimLabel"
+	bug_export_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	right.add_child(bug_export_status)
+	return page
+
+
 func _build_dialogs() -> void:
 	open_doc_dialog = FileDialog.new()
 	open_doc_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
@@ -476,6 +669,23 @@ func _build_dialogs() -> void:
 	save_dialog.title = "Zapisz wynik"
 	save_dialog.file_selected.connect(_on_save_path_chosen)
 	add_child(save_dialog)
+
+	bug_attach_dialog = FileDialog.new()
+	bug_attach_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILES
+	bug_attach_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	bug_attach_dialog.title = "Wybierz zrzuty ekranu"
+	bug_attach_dialog.filters = PackedStringArray([
+		"*.png, *.jpg, *.jpeg, *.webp, *.bmp ; Obrazy",
+	])
+	bug_attach_dialog.files_selected.connect(_on_attach_files_selected)
+	add_child(bug_attach_dialog)
+
+	bug_save_dialog = FileDialog.new()
+	bug_save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	bug_save_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	bug_save_dialog.title = "Zapisz raport błędów"
+	bug_save_dialog.file_selected.connect(_on_bug_save_path_chosen)
+	add_child(bug_save_dialog)
 
 
 # ============================================================
@@ -560,23 +770,66 @@ func _on_analyze() -> void:
 	var doc_text := doc_result.text if doc_result != null else ""
 	var app_text := app_result.text if app_result != null else ""
 	if doc_text.strip_edges().is_empty() and app_text.strip_edges().is_empty():
-		_show_error("Wczytaj najpierw dokumentację (lub folder aplikacji).")
+		if app_result != null:
+			# Wskazano tylko plik binarny — startujemy od modułu ogólnego,
+			# resztę można dodać ręcznie w tej zakładce.
+			var fallback := ModuleAnalyzer.ModuleInfo.new()
+			fallback.name = "Aplikacja — testy eksploracyjne"
+			fallback.source = "aplikacja"
+			fallback.content = "Aplikacja: %s" % app_result.source_label
+			modules = [fallback]
+			_fill_modules_tree()
+			generate_button.disabled = false
+			tabs.current_tab = 1
+			_set_status("Plik binarny nie zdradza struktury — dodano moduł ogólny. Dopisz własne moduły (np. „Logowanie”, „Koszyk”) w polu poniżej listy.")
+			return
+		_show_error("Wczytaj najpierw dokumentację lub wskaż aplikację (folder, plik albo URL).")
 		return
 	modules = ModuleAnalyzer.analyze(doc_text, app_text)
 	_fill_modules_tree()
 	generate_button.disabled = modules.is_empty()
 	tabs.current_tab = 1
-	_set_status("Wykryto moduły: %d. Zaznacz te, które chcesz przetestować, i kliknij „Generuj plan i przypadki”." % modules.size())
+	var hint := ""
+	if doc_text.strip_edges().is_empty():
+		hint = " Moduły pochodzą z analizy aplikacji — brakujące możesz dodać ręcznie w polu pod listą."
+	_set_status(("Wykryto moduły: %d. Zaznacz te, które chcesz przetestować, i kliknij „Generuj plan i przypadki”." % modules.size()) + hint)
 
 
-func _fill_modules_tree() -> void:
+func _on_add_manual_module() -> void:
+	var name := manual_module_edit.text.strip_edges()
+	if name.is_empty():
+		_show_error("Wpisz nazwę modułu, np. „Logowanie”, „Wyszukiwarka”, „Płatności”.")
+		return
+	for m in modules:
+		if m.name.to_lower() == name.to_lower():
+			_show_error("Moduł „%s” już jest na liście." % name)
+			return
+	var info := ModuleAnalyzer.ModuleInfo.new()
+	info.name = name
+	info.source = "ręcznie"
+	info.content = name
+	modules.append(info)
+	manual_module_edit.clear()
+	_fill_modules_tree(true)
+	generate_button.disabled = false
+	_set_status("Dodano moduł „%s”. Generator dobierze przypadki po słowach kluczowych w nazwie modułu." % name)
+
+
+func _fill_modules_tree(preserve_checked: bool = false) -> void:
+	# Zapamiętaj stan zaznaczeń (przy dokładaniu modułów ręcznie).
+	var checked_state := {}
+	if preserve_checked and modules_tree.get_root() != null:
+		var it := modules_tree.get_root().get_first_child()
+		while it != null:
+			checked_state[it.get_text(0)] = it.is_checked(0)
+			it = it.get_next()
 	modules_tree.clear()
 	var root := modules_tree.create_item()
 	for m in modules:
 		var item := modules_tree.create_item(root)
 		item.set_cell_mode(0, TreeItem.CELL_MODE_CHECK)
 		item.set_editable(0, true)
-		item.set_checked(0, true)
+		item.set_checked(0, checked_state.get(m.name, true))
 		item.set_text(0, m.name)
 		item.set_text(1, m.source)
 		item.set_text(2, str(m.requirement_count()))
@@ -725,3 +978,213 @@ func _on_save_path_chosen(path: String) -> void:
 		return
 	export_status.text = "Zapisano: %s" % path
 	_set_status("Zapisano plik: %s" % path)
+
+
+# ============================================================
+#  RAPORT BŁĘDÓW
+# ============================================================
+func _on_tab_changed(tab_index: int) -> void:
+	if tab_index == 5:
+		_refresh_bug_selectors()
+
+
+## Odświeża listy wyboru modułu i przypadku w formularzu zgłoszenia,
+## zachowując bieżący wybór, jeśli to możliwe.
+func _refresh_bug_selectors() -> void:
+	var prev_module := bug_module_option.get_item_text(bug_module_option.selected) if bug_module_option.selected >= 0 else ""
+	bug_module_option.clear()
+	bug_module_option.add_item("(ogólny / bez modułu)")
+	for m in modules:
+		bug_module_option.add_item(m.name)
+	for i in bug_module_option.item_count:
+		if bug_module_option.get_item_text(i) == prev_module:
+			bug_module_option.selected = i
+	var prev_case := bug_case_option.get_item_text(bug_case_option.selected) if bug_case_option.selected >= 0 else ""
+	bug_case_option.clear()
+	bug_case_option.add_item("(brak)")
+	if output != null:
+		for c in output.cases:
+			var t: String = c.title
+			if t.length() > 60:
+				t = t.substr(0, 57) + "..."
+			bug_case_option.add_item("%s — %s" % [c.id, t])
+	for i in bug_case_option.item_count:
+		if bug_case_option.get_item_text(i) == prev_case:
+			bug_case_option.selected = i
+	if bug_reporter_edit.text.strip_edges().is_empty():
+		bug_reporter_edit.text = opt_author.text.strip_edges()
+
+
+func _on_attach_files_selected(paths: PackedStringArray) -> void:
+	var errors: Array[String] = []
+	for path in paths:
+		var img := Image.new()
+		if img.load(path) != OK:
+			errors.append(path.get_file())
+			continue
+		var att := BugReporter.Attachment.new()
+		att.name = path.get_file()
+		att.image = img
+		pending_attachments.append(att)
+	_refresh_attachment_thumbnails()
+	if not errors.is_empty():
+		_show_error("Nie udało się wczytać obrazów: %s" % ", ".join(errors))
+
+
+func _on_paste_screenshot() -> void:
+	if not DisplayServer.clipboard_has_image():
+		_show_error("Schowek nie zawiera obrazu. Zrób zrzut ekranu (np. Print Screen albo Shift+Win+S) i spróbuj ponownie.")
+		return
+	var img := DisplayServer.clipboard_get_image()
+	if img == null or img.is_empty():
+		_show_error("Nie udało się pobrać obrazu ze schowka.")
+		return
+	var att := BugReporter.Attachment.new()
+	att.name = "schowek_%s.png" % Time.get_datetime_string_from_system().replace(":", "-")
+	att.image = img
+	pending_attachments.append(att)
+	_refresh_attachment_thumbnails()
+
+
+func _refresh_attachment_thumbnails() -> void:
+	for child in bug_attach_box.get_children():
+		child.queue_free()
+	for i in pending_attachments.size():
+		var att: BugReporter.Attachment = pending_attachments[i]
+		var cell := VBoxContainer.new()
+		cell.add_theme_constant_override("separation", 4)
+		var thumb_img: Image = att.image.duplicate()
+		var scale: float = minf(1.0, 150.0 / maxf(1.0, float(thumb_img.get_width())))
+		thumb_img.resize(int(thumb_img.get_width() * scale), int(thumb_img.get_height() * scale), Image.INTERPOLATE_BILINEAR)
+		var tex_rect := TextureRect.new()
+		tex_rect.texture = ImageTexture.create_from_image(thumb_img)
+		tex_rect.custom_minimum_size = Vector2(150, 90)
+		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		cell.add_child(tex_rect)
+		var name_lbl := Label.new()
+		name_lbl.theme_type_variation = "DimLabel"
+		name_lbl.text = att.name if att.name.length() <= 22 else att.name.substr(0, 19) + "..."
+		name_lbl.tooltip_text = att.name
+		cell.add_child(name_lbl)
+		var rm := _button("Usuń")
+		var idx := i
+		rm.pressed.connect(func() -> void:
+			pending_attachments.remove_at(idx)
+			_refresh_attachment_thumbnails())
+		cell.add_child(rm)
+		bug_attach_box.add_child(cell)
+
+
+func _on_add_bug() -> void:
+	var title := bug_title_edit.text.strip_edges()
+	if title.is_empty():
+		_show_error("Podaj tytuł błędu.")
+		return
+	var b := BugReporter.BugReport.new()
+	bug_counter += 1
+	b.id = "BUG-%03d" % bug_counter
+	b.title = title
+	b.module = "" if bug_module_option.selected <= 0 else bug_module_option.get_item_text(bug_module_option.selected)
+	if b.module == "":
+		b.module = "(ogólny)"
+	b.related_case = "" if bug_case_option.selected <= 0 else bug_case_option.get_item_text(bug_case_option.selected)
+	b.severity = bug_severity_option.get_item_text(bug_severity_option.selected)
+	b.environment = bug_env_edit.text.strip_edges()
+	b.reporter = bug_reporter_edit.text.strip_edges()
+	b.steps = bug_steps_edit.text
+	b.actual = bug_actual_edit.text.strip_edges()
+	b.expected = bug_expected_edit.text.strip_edges()
+	b.date = Time.get_datetime_string_from_system(false, true)
+	for att in pending_attachments:
+		b.attachments.append(att)
+	bugs.append(b)
+	# Wyczyść formularz (środowisko i zgłaszający zwykle się powtarzają — zostają).
+	bug_title_edit.clear()
+	bug_steps_edit.text = ""
+	bug_actual_edit.text = ""
+	bug_expected_edit.text = ""
+	pending_attachments = []
+	_refresh_attachment_thumbnails()
+	_fill_bugs_tree()
+	_set_status("Dodano zgłoszenie %s („%s”) z %d zrzutami. Zgłoszeń w raporcie: %d." % [b.id, b.title, b.attachments.size(), bugs.size()])
+
+
+func _fill_bugs_tree() -> void:
+	bugs_tree.clear()
+	bug_details.text = ""
+	var root := bugs_tree.create_item()
+	for i in bugs.size():
+		var b: BugReporter.BugReport = bugs[i]
+		var item := bugs_tree.create_item(root)
+		item.set_text(0, b.id)
+		item.set_text(1, b.title)
+		item.set_text(2, b.severity)
+		item.set_text(3, str(b.attachments.size()))
+		item.set_metadata(0, i)
+
+
+func _on_bug_selected() -> void:
+	var item := bugs_tree.get_selected()
+	if item == null or item.get_metadata(0) == null:
+		return
+	var b: BugReporter.BugReport = bugs[item.get_metadata(0)]
+	var lines: Array[String] = []
+	lines.append("%s — %s" % [b.id, b.title])
+	lines.append("Moduł: %s   Waga: %s   Data: %s" % [b.module, b.severity, b.date])
+	if b.related_case != "":
+		lines.append("Powiązany przypadek: %s" % b.related_case)
+	if b.environment != "":
+		lines.append("Środowisko: %s" % b.environment)
+	if b.reporter != "":
+		lines.append("Zgłaszający: %s" % b.reporter)
+	lines.append("")
+	lines.append("Kroki reprodukcji:")
+	lines.append(b.steps.strip_edges())
+	lines.append("")
+	lines.append("Rezultat aktualny: %s" % b.actual)
+	lines.append("Rezultat oczekiwany: %s" % b.expected)
+	if not b.attachments.is_empty():
+		var names: Array[String] = []
+		for a in b.attachments:
+			names.append(a.name)
+		lines.append("Zrzuty ekranu (%d): %s" % [b.attachments.size(), ", ".join(names)])
+	bug_details.text = "\n".join(lines)
+
+
+func _on_delete_bug() -> void:
+	var item := bugs_tree.get_selected()
+	if item == null or item.get_metadata(0) == null:
+		_show_error("Zaznacz zgłoszenie do usunięcia.")
+		return
+	bugs.remove_at(item.get_metadata(0))
+	_fill_bugs_tree()
+	_set_status("Usunięto zgłoszenie. Zgłoszeń w raporcie: %d." % bugs.size())
+
+
+func _on_export_bugs() -> void:
+	if bugs.is_empty():
+		_show_error("Raport jest pusty — dodaj najpierw co najmniej jedno zgłoszenie.")
+		return
+	var ext: String = ["html", "md", "csv"][bug_export_format.selected]
+	bug_save_dialog.filters = PackedStringArray(["*.%s ; Pliki %s" % [ext, ext.to_upper()]])
+	bug_save_dialog.current_file = "raport_bledow_%s.%s" % [Time.get_date_string_from_system(), ext]
+	bug_save_dialog.popup_centered_ratio(0.7)
+
+
+func _on_bug_save_path_chosen(path: String) -> void:
+	var ext: String = ["html", "md", "csv"][bug_export_format.selected]
+	if path.get_extension().to_lower() != ext:
+		path += "." + ext
+	var project := opt_project.text.strip_edges()
+	if project.is_empty():
+		project = "Aplikacja"
+	var err := BugReporter.export(path, ext, bugs, project)
+	if err != "":
+		bug_export_status.text = "Błąd: " + err
+		_show_error(err)
+		return
+	bug_export_status.text = "Zapisano: %s" % path
+	if ext == "md":
+		bug_export_status.text += " (zrzuty w folderze %s_zalaczniki)" % path.get_file().get_basename()
+	_set_status("Zapisano raport błędów: %s" % path)

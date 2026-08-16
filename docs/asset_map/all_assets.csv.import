@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://ch7tfulg276cq"
+
+[deps]
+
+files=["res://docs/asset_map/all_assets.file.translation", "res://docs/asset_map/all_assets.x0.translation", "res://docs/asset_map/all_assets.y0.translation", "res://docs/asset_map/all_assets.x1.translation", "res://docs/asset_map/all_assets.y1.translation", "res://docs/asset_map/all_assets.pixels.translation", "res://docs/asset_map/all_assets.width.translation", "res://docs/asset_map/all_assets.height.translation"]
+
+source_file="res://docs/asset_map/all_assets.csv"
+dest_files=["res://docs/asset_map/all_assets.file.translation", "res://docs/asset_map/all_assets.x0.translation", "res://docs/asset_map/all_assets.y0.translation", "res://docs/asset_map/all_assets.x1.translation", "res://docs/asset_map/all_assets.y1.translation", "res://docs/asset_map/all_assets.pixels.translation", "res://docs/asset_map/all_assets.width.translation", "res://docs/asset_map/all_assets.height.translation"]
+
+[params]
+
+compress=true
+delimiter=0

@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://51ls3e1c6sgv"
+
+[deps]
+
+files=["res://docs/asset_map/tabs_assets.x0.translation", "res://docs/asset_map/tabs_assets.y0.translation", "res://docs/asset_map/tabs_assets.x1.translation", "res://docs/asset_map/tabs_assets.y1.translation", "res://docs/asset_map/tabs_assets.pixels.translation", "res://docs/asset_map/tabs_assets.width.translation", "res://docs/asset_map/tabs_assets.height.translation"]
+
+source_file="res://docs/asset_map/tabs_assets.csv"
+dest_files=["res://docs/asset_map/tabs_assets.x0.translation", "res://docs/asset_map/tabs_assets.y0.translation", "res://docs/asset_map/tabs_assets.x1.translation", "res://docs/asset_map/tabs_assets.y1.translation", "res://docs/asset_map/tabs_assets.pixels.translation", "res://docs/asset_map/tabs_assets.width.translation", "res://docs/asset_map/tabs_assets.height.translation"]
+
+[params]
+
+compress=true
+delimiter=0

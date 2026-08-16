@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dlbpxcj5htryc"
+
+[deps]
+
+files=["res://docs/asset_map/buttons_assets.x0.translation", "res://docs/asset_map/buttons_assets.y0.translation", "res://docs/asset_map/buttons_assets.x1.translation", "res://docs/asset_map/buttons_assets.y1.translation", "res://docs/asset_map/buttons_assets.pixels.translation", "res://docs/asset_map/buttons_assets.width.translation", "res://docs/asset_map/buttons_assets.height.translation"]
+
+source_file="res://docs/asset_map/buttons_assets.csv"
+dest_files=["res://docs/asset_map/buttons_assets.x0.translation", "res://docs/asset_map/buttons_assets.y0.translation", "res://docs/asset_map/buttons_assets.x1.translation", "res://docs/asset_map/buttons_assets.y1.translation", "res://docs/asset_map/buttons_assets.pixels.translation", "res://docs/asset_map/buttons_assets.width.translation", "res://docs/asset_map/buttons_assets.height.translation"]
+
+[params]
+
+compress=true
+delimiter=0

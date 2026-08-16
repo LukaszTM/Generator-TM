@@ -555,9 +555,10 @@ func _build_bugs_tab() -> Control:
 	var attach_file_btn := _button("Dodaj z pliku…", UITheme.ICON_FOLDER)
 	attach_file_btn.pressed.connect(func() -> void: bug_attach_dialog.popup_centered_ratio(0.7))
 	attach_row.add_child(attach_file_btn)
-	var attach_clip_btn := _button("Wklej ze schowka", UITheme.ICON_CLIPBOARD)
-	attach_clip_btn.pressed.connect(_on_paste_screenshot)
-	attach_row.add_child(attach_clip_btn)
+	var attach_hint := Label.new()
+	attach_hint.theme_type_variation = "DimLabel"
+	attach_hint.text = "PNG, JPG, WEBP lub BMP — można wybrać kilka naraz."
+	attach_row.add_child(attach_hint)
 	bug_attach_box = HFlowContainer.new()
 	bug_attach_box.add_theme_constant_override("h_separation", 8)
 	bug_attach_box.add_theme_constant_override("v_separation", 8)
@@ -1029,21 +1030,6 @@ func _on_attach_files_selected(paths: PackedStringArray) -> void:
 	_refresh_attachment_thumbnails()
 	if not errors.is_empty():
 		_show_error("Nie udało się wczytać obrazów: %s" % ", ".join(errors))
-
-
-func _on_paste_screenshot() -> void:
-	if not DisplayServer.clipboard_has_image():
-		_show_error("Schowek nie zawiera obrazu. Zrób zrzut ekranu (np. Print Screen albo Shift+Win+S) i spróbuj ponownie.")
-		return
-	var img := DisplayServer.clipboard_get_image()
-	if img == null or img.is_empty():
-		_show_error("Nie udało się pobrać obrazu ze schowka.")
-		return
-	var att := BugReporter.Attachment.new()
-	att.name = "schowek_%s.png" % Time.get_datetime_string_from_system().replace(":", "-")
-	att.image = img
-	pending_attachments.append(att)
-	_refresh_attachment_thumbnails()
 
 
 func _refresh_attachment_thumbnails() -> void:

@@ -24,7 +24,7 @@ Projekt przygotowany w **Godot 4.4** (GDScript) i gotowy do eksportu do pliku `.
    - **plan testów** (struktura wg IEEE 829/ISO 29119: cel, zakres, strategia, środowisko, kryteria wejścia/wyjścia, ryzyka, pracochłonność, zestawienie przypadków),
    - **przypadki testowe** (ID, moduł, typ, priorytet, warunki wstępne, kroki, dane testowe, oczekiwany rezultat) — reguły rozpoznają m.in. logowanie, rejestrację, formularze, wyszukiwanie, filtry, listy, import/eksport plików, płatności, API, uprawnienia, raporty, ustawienia i daty; generowane są testy pozytywne, negatywne, brzegowe i bezpieczeństwa (do wyboru).
 6. **Eksport** do `.md` (Markdown), `.csv` (średniki — przyjazne polskiemu Excelowi, importowalne do Jiry/TestRaila) oraz `.html` (gotowy do druku).
-7. **Raport błędów** — formularz zgłoszenia (tytuł, moduł, powiązany przypadek testowy, waga, środowisko, kroki reprodukcji, rezultat aktualny/oczekiwany) z możliwością **dołączenia zrzutów ekranu**: z pliku (`.png`, `.jpg`, `.webp`, `.bmp`) albo **wklejenia wprost ze schowka** (Print Screen / Shift+Win+S → „Wklej ze schowka”). Eksport raportu do:
+7. **Raport błędów** — formularz zgłoszenia (tytuł, moduł, powiązany przypadek testowy, waga, środowisko, kroki reprodukcji, rezultat aktualny/oczekiwany) z możliwością **dołączenia zrzutów ekranu** z pliku (`.png`, `.jpg`, `.webp`, `.bmp`; można wybrać kilka naraz). Eksport raportu do:
    - `.html` — zrzuty **osadzone w jednym pliku** (base64) — najwygodniejsze do wysłania,
    - `.md` — zrzuty zapisywane w podfolderze `<nazwa>_zalaczniki/` obok pliku,
    - `.csv` — tabela zgłoszeń (bez obrazów, z nazwami załączników).

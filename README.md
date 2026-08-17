@@ -31,7 +31,12 @@ Projekt przygotowany w **Godot 4.4** (GDScript) i gotowy do eksportu do pliku `.
 
 ## Motywy graficzne
 
-W nagłówku okna jest przełącznik **Motyw** — do wyboru „TestPilot — jasny” i „TestPilot — ciemny”. Oba zbudowane są z dostarczonego pakietu assetów (warianty light/dark: przyciski, ikony i kolorystyka okna). Zmiana działa natychmiast — podmieniane są też ikony na wariant pasujący do tła. Wybór zapisuje się na dysku (`user://ustawienia.cfg`) i wraca po ponownym uruchomieniu.
+W nagłówku okna jest przełącznik **Motyw** z czterema wariantami zbudowanymi z pakietów assetów TestPilot Studio:
+
+- **TestPilot — jasny / ciemny** — nowoczesny wygląd (`assets/`, `assets/dark/`),
+- **Klasyczny — jasny / ciemny** — styl Windows 95/98 (`assets/classic_light/`, `assets/classic_dark/`): fazowane przyciski 9-slice ze stanami, klasyczne checkboxy, nagłówki tabel, paski przewijania, pikselowe ikony 16/24/32 px i czcionka systemowa Tahoma (fallback Arial/Liberation Sans).
+
+Zmiana motywu działa natychmiast i podmienia także ikony na wariant pasujący do stylu (ikony są mapowane per motyw — nazwy logiczne w `ui_theme.gd`). Wybór zapisuje się w `user://ustawienia.cfg` i wraca po ponownym uruchomieniu. Palety klasycznych motywów pochodzą z manifestów pakietu (`docs/asset_map/classic_*_manifest.json`).
 
 ### Jak dodać własny motyw graficzny
 

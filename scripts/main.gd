@@ -4,7 +4,7 @@ extends Control
 
 const APP_TITLE := "Generator TM"
 const APP_SUBTITLE := "plany testów i przypadki testowe"
-const VERSION := "1.1"
+const VERSION := "1.2"
 const SETTINGS_PATH := "user://ustawienia.cfg"
 
 # --- Stan aplikacji ---
@@ -115,12 +115,12 @@ func _build_layout() -> void:
 	header_box.add_theme_constant_override("separation", 12)
 	header.add_child(header_box)
 	var logo := TextureRect.new()
-	logo.texture = load(UITheme.icon_path(current_theme_id, "logo"))
+	logo.texture = load(UITheme.icon_path(current_theme_id, "logo", 32))
 	logo.custom_minimum_size = Vector2(34, 34)
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	header_box.add_child(logo)
-	icon_widgets.append({"node": logo, "name": "logo"})
+	icon_widgets.append({"node": logo, "name": "logo", "size": 32})
 	var title := Label.new()
 	title.theme_type_variation = "TitleLabel"
 	title.text = APP_TITLE
@@ -164,7 +164,7 @@ func _build_layout() -> void:
 	tabs.add_child(_build_bugs_tab())
 	# Tytuły ustawiane wprost — nazwy węzłów nie mogą zawierać kropki.
 	var tab_titles := ["1. Źródła", "2. Moduły i opcje", "3. Plan testów", "4. Przypadki testowe", "5. Eksport", "6. Raport błędów"]
-	tab_icon_names = ["folder", "filter", "doc", "clipboard", "export", "shield"]
+	tab_icon_names = ["folder", "modules", "plan", "cases", "export", "bugs"]
 	for i in tab_icon_names.size():
 		tabs.set_tab_title(i, tab_titles[i])
 		tabs.set_tab_icon(i, _icon_tex(tab_icon_names[i]))
@@ -179,8 +179,11 @@ func _build_layout() -> void:
 	status_bar.add_child(status_label)
 
 
-## Mała ikona (20 px) dla przycisków i zakładek — z wariantu aktywnego motywu.
+## Mała ikona dla przycisków i zakładek — z wariantu aktywnego motywu.
+## Motywy klasyczne używają pikselowych ikon 16 px bez skalowania (ostre piksele).
 func _icon_tex(icon_name: String) -> Texture2D:
+	if UITheme.is_classic(current_theme_id):
+		return load(UITheme.icon_path(current_theme_id, icon_name, 16))
 	var img: Texture2D = load(UITheme.icon_path(current_theme_id, icon_name))
 	var image := img.get_image()
 	image.resize(20, 20, Image.INTERPOLATE_LANCZOS)
@@ -199,12 +202,12 @@ func _card(title_text: String, icon_name: String = "") -> Array:
 	box.add_child(head)
 	if icon_name != "":
 		var ic := TextureRect.new()
-		ic.texture = load(UITheme.icon_path(current_theme_id, icon_name))
+		ic.texture = load(UITheme.icon_path(current_theme_id, icon_name, 24))
 		ic.custom_minimum_size = Vector2(24, 24)
 		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		head.add_child(ic)
-		icon_widgets.append({"node": ic, "name": icon_name})
+		icon_widgets.append({"node": ic, "name": icon_name, "size": 24})
 	var lbl := Label.new()
 	lbl.theme_type_variation = "CardTitle"
 	lbl.text = title_text
@@ -302,7 +305,7 @@ func _build_sources_tab() -> Control:
 	var actions := HBoxContainer.new()
 	actions.alignment = BoxContainer.ALIGNMENT_END
 	outer.add_child(actions)
-	analyze_button = _button("Analizuj i wykryj moduły  →", "search", "PrimaryButton")
+	analyze_button = _button("Analizuj i wykryj moduły  →", "analyze", "PrimaryButton")
 	analyze_button.disabled = true
 	analyze_button.pressed.connect(_on_analyze)
 	actions.add_child(analyze_button)
@@ -315,7 +318,7 @@ func _build_modules_tab() -> Control:
 	page.name = "Moduly"
 	page.split_offset = 640
 
-	var left_parts := _card("Wykryte moduły — zaznacz, które przetestować", "filter")
+	var left_parts := _card("Wykryte moduły — zaznacz, które przetestować", "modules")
 	var left_card: PanelContainer = left_parts[0]
 	left_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page.add_child(left_card)
@@ -396,7 +399,7 @@ func _build_modules_tab() -> Control:
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	right.add_child(spacer)
-	generate_button = _button("Generuj plan i przypadki  →", "checklist", "PrimaryButton")
+	generate_button = _button("Generuj plan i przypadki  →", "generate", "PrimaryButton")
 	generate_button.disabled = true
 	generate_button.pressed.connect(_on_generate)
 	right.add_child(generate_button)
@@ -591,7 +594,7 @@ func _build_bugs_tab() -> Control:
 	var add_row := HBoxContainer.new()
 	add_row.alignment = BoxContainer.ALIGNMENT_END
 	form.add_child(add_row)
-	var add_bug_btn := _button("Dodaj zgłoszenie do raportu  →", "shield", "PrimaryButton")
+	var add_bug_btn := _button("Dodaj zgłoszenie do raportu  →", "bugs", "PrimaryButton")
 	add_bug_btn.pressed.connect(_on_add_bug)
 	add_row.add_child(add_bug_btn)
 
@@ -624,7 +627,7 @@ func _build_bugs_tab() -> Control:
 	var del_row := HBoxContainer.new()
 	del_row.add_theme_constant_override("separation", 8)
 	right.add_child(del_row)
-	var del_btn := _button("Usuń zaznaczone zgłoszenie", "filter", "DangerButton")
+	var del_btn := _button("Usuń zaznaczone zgłoszenie", "delete", "DangerButton")
 	del_btn.pressed.connect(_on_delete_bug)
 	del_row.add_child(del_btn)
 	bug_details = TextEdit.new()
@@ -743,7 +746,7 @@ func _refresh_icons() -> void:
 		if node is Button:
 			node.icon = _icon_tex(entry["name"])
 		elif node is TextureRect:
-			node.texture = load(UITheme.icon_path(current_theme_id, entry["name"]))
+			node.texture = load(UITheme.icon_path(current_theme_id, entry["name"], entry.get("size", 24)))
 	for i in tab_icon_names.size():
 		tabs.set_tab_icon(i, _icon_tex(tab_icon_names[i]))
 

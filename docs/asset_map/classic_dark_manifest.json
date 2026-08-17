@@ -1,0 +1,89 @@
+{
+  "name": "TestPilot Studio Dark UI Asset Pack",
+  "engine": "Godot 4.x",
+  "based_on": [
+    "/mnt/data/ghostwriter_images/generated/a_high_detail_screenshot_of_a_dark_themed_windows_1.png",
+    "/mnt/data/ghostwriter_images/generated/a_clean_high_resolution_ui_asset_sprite_sheet_on_2_batch_1.png",
+    "/mnt/data/ghostwriter_images/generated/a_dark_ui_style_guide_asset_sheet_displayed_like_3_batch_2.png"
+  ],
+  "font": {
+    "type": "SystemFont",
+    "primary": "Tahoma",
+    "fallbacks": [
+      "Arial",
+      "Liberation Sans"
+    ],
+    "polish_chars": true,
+    "bundled_binary": false
+  },
+  "nine_patch_margins": {
+    "buttons/*_9slice.png": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "tabs/*_9slice.png": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "frames/*_9slice.png": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "inputs/*_9slice.png": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "controls/progress_background_9slice.png": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "controls/progress_fill_9slice.png": [
+      2,
+      2,
+      2,
+      2
+    ]
+  },
+  "palette": {
+    "win_bg": "#11181E",
+    "panel_bg": "#151E26",
+    "panel_bg2": "#0D1318",
+    "light": "#707E8C",
+    "light2": "#485663",
+    "shadow": "#080C10",
+    "dark": "#05080B",
+    "black": "#000000",
+    "title_blue": "#001C5C",
+    "title_blue2": "#001238",
+    "teal": "#006476",
+    "input_bg": "#0E141B",
+    "row_aqua": "#0A3A44",
+    "row_sel": "#125096",
+    "info_yellow": "#282C10",
+    "green": "#24D24A",
+    "green_dark": "#0A7828",
+    "blue": "#3082EB",
+    "red": "#D22A2A",
+    "yellow": "#F0C414",
+    "orange": "#E28900",
+    "cyan": "#00BED2",
+    "gray_text": "#CDD6E0",
+    "text_dim": "#A0AAB4"
+  },
+  "icon_count": 53,
+  "icon_sizes": [
+    16,
+    24,
+    32
+  ]
+}

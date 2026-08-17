@@ -1,0 +1,87 @@
+{
+  "name": "TestPilot Studio Classic UI Asset Pack",
+  "engine": "Godot 4.x",
+  "source_visuals": [
+    "1000007177.png",
+    "1000007178.png",
+    "1000007179.png"
+  ],
+  "font": {
+    "type": "SystemFont",
+    "primary": "Tahoma",
+    "fallbacks": [
+      "Arial",
+      "Liberation Sans"
+    ],
+    "polish_chars": true,
+    "bundled_binary": false
+  },
+  "nine_patch_margins": {
+    "buttons/*_9slice.png": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "tabs/*_9slice.png": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "frames/*_9slice.png": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "inputs/*_9slice.png": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "controls/progress_background_9slice.png": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "controls/progress_fill_9slice.png": [
+      2,
+      2,
+      2,
+      2
+    ]
+  },
+  "palette": {
+    "win_bg": "#C9C9C9",
+    "panel_bg": "#CFCFCF",
+    "light": "#FFFFFF",
+    "light2": "#E8E8E8",
+    "shadow": "#808080",
+    "dark": "#404040",
+    "black": "#000000",
+    "title_blue": "#000088",
+    "title_blue2": "#000184",
+    "teal": "#007173",
+    "input_bg": "#F7F7F7",
+    "row_aqua": "#C9DDDE",
+    "row_sel": "#000088",
+    "info_yellow": "#FFF8CD",
+    "green": "#009900",
+    "green_dark": "#007000",
+    "blue": "#005CB8",
+    "red": "#C40000",
+    "yellow": "#FFD200",
+    "orange": "#E28900",
+    "cyan": "#00BED2",
+    "gray_text": "#686868"
+  },
+  "icon_count": 53,
+  "icon_sizes": [
+    16,
+    24,
+    32
+  ]
+}

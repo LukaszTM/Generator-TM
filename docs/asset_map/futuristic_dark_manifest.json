@@ -1,0 +1,79 @@
+{
+  "name": "TestPilot Studio Futuristic Dark",
+  "engine": "Godot 4.x",
+  "style": "Futuristic modern desktop UI",
+  "font": {
+    "type": "SystemFont",
+    "primary": "Inter",
+    "fallbacks": [
+      "Segoe UI",
+      "Arial",
+      "Liberation Sans"
+    ],
+    "polish_chars": true,
+    "bundled_binary": false
+  },
+  "icon_count": 53,
+  "icon_sizes": [
+    16,
+    24,
+    32
+  ],
+  "nine_patch_margins": {
+    "buttons/*_9slice.png": [
+      10,
+      10,
+      10,
+      10
+    ],
+    "tabs/*_9slice.png": [
+      8,
+      8,
+      8,
+      8
+    ],
+    "frames/*_9slice.png": [
+      10,
+      10,
+      10,
+      10
+    ],
+    "inputs/*_9slice.png": [
+      10,
+      10,
+      10,
+      10
+    ],
+    "controls/progress_*": [
+      8,
+      8,
+      8,
+      8
+    ]
+  },
+  "palette": {
+    "bg": "#080E1A",
+    "surface": "#0C1526",
+    "surface2": "#0F1C2F",
+    "surface3": "#12223A",
+    "border": "#1C3D61",
+    "border2": "#2360A5",
+    "shadow": "#000000",
+    "text": "#E1ECFF",
+    "text2": "#8AAAD7",
+    "accent": "#2A84FF",
+    "accent2": "#00DDFF",
+    "success": "#23D46D",
+    "warning": "#F3B634",
+    "danger": "#FF5363",
+    "disabled": "#1F2B3E",
+    "disabled_text": "#586B8A",
+    "statusbar": "#09111F",
+    "sidebar": "#09111F",
+    "menu": "#09111F"
+  },
+  "previews": [
+    "a_clean_dark_ui_ux_design_system_style_guide_poste_4_batch_4.png",
+    "a_detailed_high_resolution_screenshot_of_a_dark_th_2_batch_2.png"
+  ]
+}

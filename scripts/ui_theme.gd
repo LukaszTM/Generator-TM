@@ -1,16 +1,19 @@
 class_name UITheme
 extends RefCounted
-## Motywy graficzne aplikacji — cztery warianty zbudowane z pakietów
+## Motywy graficzne aplikacji — osiem wariantów zbudowanych z pakietów
 ## assetów "TestPilot Studio":
-##  - TestPilot jasny  — kolory z style_tokens pakietu Modern Light + jego ikony,
-##  - TestPilot ciemny — tekstury pakietu Modern UI Dark (assets/modern_dark/),
-##  - Klasyczny jasny/ciemny — styl Windows 95/98 (assets/classic_*/).
+##  - TestPilot jasny/ciemny  — nowoczesny (tokeny + pakiet Modern UI Dark),
+##  - Modern 2 jasny/ciemny   — pakiet Modern cięty automatycznie,
+##  - Klasyczny jasny/ciemny  — styl Windows 95/98 (pakiet nazwany),
+##  - Futurystyczny jasny/ciemny — pakiet nazwany Futuristic.
 ## Jak dodać własny motyw — patrz README, sekcja „Jak dodać własny motyw graficzny”.
 
 const DEFAULT_THEME_ID := "testpilot_jasny"
 
 # ------------------------------------------------------------------
 # Ikony logiczne. Klucze wspólne dla wszystkich motywów.
+# ICONS_MODERN — pakiety Modern (pliki icon_<nazwa>_48.png),
+# ICONS_NAMED  — pakiety nazwane z ikonami 16/24/32 (klasyczne i futurystyczne).
 # ------------------------------------------------------------------
 const ICONS_MODERN := {
 	"logo": "app_window", "home": "home", "doc_new": "plus", "doc_down": "download",
@@ -21,7 +24,7 @@ const ICONS_MODERN := {
 	"modules": "module_grid", "plan": "document", "cases": "checklist", "bugs": "warning",
 	"generate": "play", "analyze": "search", "app": "app_window",
 }
-const ICONS_CLASSIC := {
+const ICONS_NAMED := {
 	"logo": "app_logo", "home": "project", "doc_new": "new_project", "doc_down": "import_document",
 	"package": "import_application", "checklist": "checklist", "search": "search", "gear": "settings",
 	"folder": "folder", "clipboard": "test_cases", "globe": "url", "doc": "document",
@@ -39,30 +42,28 @@ static func themes() -> Array[Dictionary]:
 		{"id": "testpilot_ciemny", "name": "TestPilot — ciemny"},
 		{"id": "modern2_jasny", "name": "Modern 2 — jasny"},
 		{"id": "modern2_ciemny", "name": "Modern 2 — ciemny"},
+		{"id": "futur_jasny", "name": "Futurystyczny — jasny"},
+		{"id": "futur_ciemny", "name": "Futurystyczny — ciemny"},
 		{"id": "klasyczny_jasny", "name": "Klasyczny — jasny"},
 		{"id": "klasyczny_ciemny", "name": "Klasyczny — ciemny"},
 	]
 
 
 ## Ścieżka pliku ikony logicznej w wariancie aktywnego motywu.
-## size ma znaczenie dla motywów klasycznych (dostępne: 16/24/32).
+## size ma znaczenie dla pakietów nazwanych (dostępne: 16/24/32).
 static func icon_path(theme_id: String, name: String, size: int = 24) -> String:
-	var variant: String = spec(theme_id)["icon_variant"]
-	match variant:
-		"modern_light":
-			return "res://assets/modern_light/icons/icon_%s_48.png" % ICONS_MODERN[name]
-		"modern_dark":
-			return "res://assets/modern_dark/icons/icon_%s_48.png" % ICONS_MODERN[name]
-		"classic_light", "classic_dark":
-			var dir := "classic_light" if variant == "classic_light" else "classic_dark"
-			var s := 16 if size <= 20 else (24 if size <= 28 else 32)
-			return "res://assets/%s/icons/%d/%s.png" % [dir, s, ICONS_CLASSIC[name]]
-	return ""
+	var s := spec(theme_id)
+	if s.has("icons_dir"):
+		var sz := 16 if size <= 20 else (24 if size <= 28 else 32)
+		return "%s/%d/%s.png" % [s.icons_dir, sz, ICONS_NAMED[name]]
+	if s["icon_variant"] == "modern_dark":
+		return "res://assets/modern_dark/icons/icon_%s_48.png" % ICONS_MODERN[name]
+	return "res://assets/modern_light/icons/icon_%s_48.png" % ICONS_MODERN[name]
 
 
-## Czy motyw używa pikselowych ikon klasycznych (bez skalowania w przyciskach).
+## Czy motyw używa ikon z pakietu nazwanego (16 px bez skalowania w przyciskach).
 static func is_classic(theme_id: String) -> bool:
-	return spec(theme_id).has("classic_dir")
+	return spec(theme_id).has("pack_dir")
 
 
 ## Specyfikacja motywu.
@@ -93,8 +94,7 @@ static func spec(id: String) -> Dictionary:
 				"btn_danger_font": Color.WHITE,
 			}
 		"modern2_jasny":
-			# Pakiet Modern (cięty automatycznie), wariant jasny: kolory z arkuszy
-			# okna, błyszczące przyciski wycięte z pakietu, ikony konturowe modern.
+			# Pakiet Modern (cięty automatycznie), wariant jasny.
 			return {
 				"name": "Modern 2 — jasny",
 				"icon_variant": "modern_light",
@@ -150,12 +150,70 @@ static func spec(id: String) -> Dictionary:
 				"btn_danger_margins": [14, 12],
 				"btn_danger_bg": Color("c42836"), "btn_danger_border": Color("f0424f"), "btn_danger_font": Color.WHITE,
 			}
+		"futur_jasny":
+			# Pakiet nazwany Futuristic Light — paleta z manifestu pakietu.
+			return {
+				"name": "Futurystyczny — jasny",
+				"icon_variant": "futur_light",
+				"pack_dir": "res://assets/futuristic_light",
+				"icons_dir": "res://assets/futuristic_light/icons",
+				"pack_font": "inter",
+				"m_btn": 10, "m_tab": 8, "m_frame": 10, "m_input": 10, "m_prog": 8,
+				"btn_content": [16, 7],
+				"bg": Color("f7faff"),
+				"card": Color("ffffff"),
+				"header": Color("286aff"),
+				"header_text": Color.WHITE,
+				"accent": Color("286aff"),
+				"text": Color("20335a"),
+				"text_dim": Color("5a6d8c"),
+				"border": Color("d8e2f1"),
+				"danger": Color("e85461"),
+				"field_bg": Color("ffffff"),
+				"tab_unselected_bg": Color("f0f6ff"),
+				"tree_sel": Color("dce9ff"),
+				"tree_sel_text": Color("20335a"),
+				"status_bg": Color("fafcff"),
+				"btn_normal_font": Color("20335a"),
+				"btn_primary_font": Color.WHITE,
+				"btn_danger_font": Color("e85461"),
+			}
+		"futur_ciemny":
+			# Pakiet nazwany Futuristic Dark — paleta z manifestu pakietu.
+			return {
+				"name": "Futurystyczny — ciemny",
+				"icon_variant": "futur_dark",
+				"pack_dir": "res://assets/futuristic_dark",
+				"icons_dir": "res://assets/futuristic_dark/icons",
+				"pack_font": "inter",
+				"m_btn": 10, "m_tab": 8, "m_frame": 10, "m_input": 10, "m_prog": 8,
+				"btn_content": [16, 7],
+				"bg": Color("080e1a"),
+				"card": Color("0c1526"),
+				"header": Color("0c1526"),
+				"header_text": Color("e1ecff"),
+				"accent": Color("2a84ff"),
+				"text": Color("e1ecff"),
+				"text_dim": Color("8aaad7"),
+				"border": Color("1c3d61"),
+				"danger": Color("ff5363"),
+				"field_bg": Color("0a1220"),
+				"tab_unselected_bg": Color("0f1c2f"),
+				"tree_sel": Color("12325a"),
+				"tree_sel_text": Color("e1ecff"),
+				"status_bg": Color("09111f"),
+				"btn_normal_font": Color("e1ecff"),
+				"btn_primary_font": Color.WHITE,
+				"btn_danger_font": Color("ff5363"),
+			}
 		"klasyczny_jasny":
 			# Paleta z docs/asset_map/classic_light_manifest.json
 			return {
 				"name": "Klasyczny — jasny",
 				"icon_variant": "classic_light",
-				"classic_dir": "res://assets/classic_light",
+				"pack_dir": "res://assets/classic_light",
+				"icons_dir": "res://assets/classic_light/icons",
+				"pack_font": "tahoma",
 				"bg": Color("c9c9c9"),
 				"card": Color("cfcfcf"),
 				"header": Color("000088"),
@@ -179,7 +237,9 @@ static func spec(id: String) -> Dictionary:
 			return {
 				"name": "Klasyczny — ciemny",
 				"icon_variant": "classic_dark",
-				"classic_dir": "res://assets/classic_dark",
+				"pack_dir": "res://assets/classic_dark",
+				"icons_dir": "res://assets/classic_dark/icons",
+				"pack_font": "tahoma",
 				"bg": Color("11181e"),
 				"card": Color("151e26"),
 				"header": Color("001c5c"),
@@ -199,8 +259,7 @@ static func spec(id: String) -> Dictionary:
 				"btn_danger_font": Color("ff6b6b"),
 			}
 		_:  # "testpilot_jasny" — motyw domyślny
-			# Kolory z docs/asset_map/modern_light_tokens.json (style_tokens
-			# pakietu Modern Light); rysowany płasko, ikony z pakietu.
+			# Kolory z docs/asset_map/modern_light_tokens.json; rysowany płasko.
 			return {
 				"name": "TestPilot — jasny",
 				"icon_variant": "modern_light",
@@ -235,16 +294,22 @@ static func color(id: String, key: String) -> Color:
 static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 	var s := spec(id)
 	var theme := Theme.new()
-	var classic: bool = s.has("classic_dir")
-	var modern: bool = s.has("modern_dir")
+	var pack: bool = s.has("pack_dir")        # pakiet nazwany (klasyczny/futurystyczny)
+	var modern: bool = s.has("modern_dir")    # pakiet Modern UI Dark
+	var retro: bool = s.get("pack_font", "") == "tahoma"
+	# Marginesy 9-slice pakietu nazwanego (klasyczny: 4, futurystyczny: z manifestu).
+	var m_btn: int = s.get("m_btn", 4)
+	var m_tab: int = s.get("m_tab", 4)
+	var m_frame: int = s.get("m_frame", 4)
+	var m_input: int = s.get("m_input", 4)
+	var btn_content: Array = s.get("btn_content", [14, 6])
 
-	# --- Czcionki: klasyczne motywy używają systemowej Tahomy (zgodnie
-	# z pakietem), pozostałe dołączonego Intera.
+	# --- Czcionki: klasyczne motywy używają systemowej Tahomy, pozostałe Intera.
 	var font_regular: Font
 	var font_medium: Font
 	var font_semibold: Font
 	var font_bold: Font
-	if classic:
+	if retro:
 		var sys := SystemFont.new()
 		sys.font_names = PackedStringArray(["Tahoma", "Arial", "Liberation Sans"])
 		var sys_bold := SystemFont.new()
@@ -270,10 +335,19 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 	theme.set_type_variation(&"DangerButton", &"Button")
 	_setup_button(theme, "DangerButton", s, "danger", font_semibold)
 
-	# OptionButton: klasyka dziedziczy styl przycisku, modern ma dropdowny z pakietu.
-	if classic:
-		for state in ["normal", "hover", "pressed", "disabled", "focus"]:
-			theme.set_stylebox(state, "OptionButton", theme.get_stylebox(state, "Button"))
+	# OptionButton: pakiety nazwane mają combobox, Modern ma dropdowny.
+	if pack:
+		var combo_path: String = s.pack_dir + "/inputs/combobox_normal_9slice.png"
+		if ResourceLoader.exists(combo_path):
+			var combo := _tex_box(combo_path, m_input, 8)
+			combo.content_margin_left = 12
+			combo.content_margin_right = 12
+			for state in ["normal", "hover", "pressed", "focus"]:
+				theme.set_stylebox(state, "OptionButton", combo)
+			theme.set_stylebox("disabled", "OptionButton", _tex_box(s.pack_dir + "/inputs/combobox_disabled_9slice.png", m_input, 8))
+		else:
+			for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+				theme.set_stylebox(state, "OptionButton", theme.get_stylebox(state, "Button"))
 	elif modern:
 		var dd := {
 			"normal": "/inputs/dropdown_normal.png", "hover": "/inputs/dropdown_hover.png",
@@ -289,8 +363,8 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 
 	# ---------- Panele / karty ----------
 	var card: StyleBox
-	if classic:
-		card = _tex_box(s.classic_dir + "/frames/panel_raised_9slice.png", 4, 12)
+	if pack:
+		card = _tex_box(s.pack_dir + "/frames/panel_raised_9slice.png", m_frame, 12)
 	elif modern:
 		card = _tex_box(s.modern_dir + "/panels/card_420x220.png", 20, 16)
 	else:
@@ -299,8 +373,8 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 	theme.set_stylebox("panel", "Card", card)
 
 	var header: StyleBox
-	if classic:
-		header = _tex_box(s.classic_dir + "/backgrounds/titlebar_active.png", 4, 8)
+	if pack:
+		header = _tex_box(s.pack_dir + "/backgrounds/titlebar_active.png", m_frame, 8)
 	elif modern:
 		header = _tex_box(s.modern_dir + "/window/top_toolbar_1200x64.png", 8, 10)
 	else:
@@ -311,8 +385,8 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 	theme.set_stylebox("panel", "HeaderBar", header)
 
 	var status: StyleBox
-	if classic:
-		status = _tex_box(s.classic_dir + "/frames/status_pane_9slice.png", 4, 6)
+	if pack:
+		status = _tex_box(s.pack_dir + "/frames/status_pane_9slice.png", m_frame, 6)
 	elif modern:
 		status = _tex_box(s.modern_dir + "/window/status_bar_1200x42.png", 8, 6)
 	else:
@@ -326,26 +400,26 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 	var header_text: Color = s.get("header_text", Color.WHITE)
 	theme.set_type_variation(&"TitleLabel", &"Label")
 	theme.set_font("font", "TitleLabel", font_bold)
-	theme.set_font_size("font_size", "TitleLabel", 18 if classic else 20)
+	theme.set_font_size("font_size", "TitleLabel", 18 if retro else 20)
 	theme.set_color("font_color", "TitleLabel", header_text)
 	theme.set_type_variation(&"HeaderDim", &"Label")
 	theme.set_color("font_color", "HeaderDim", Color(header_text, 0.72))
 	theme.set_type_variation(&"CardTitle", &"Label")
 	theme.set_font("font", "CardTitle", font_semibold)
-	theme.set_font_size("font_size", "CardTitle", 15 if classic else 17)
+	theme.set_font_size("font_size", "CardTitle", 15 if retro else 17)
 	theme.set_color("font_color", "CardTitle", s.text)
 	theme.set_type_variation(&"DimLabel", &"Label")
 	theme.set_color("font_color", "DimLabel", s.text_dim)
-	theme.set_font_size("font_size", "DimLabel", 12 if classic else 13)
+	theme.set_font_size("font_size", "DimLabel", 12 if retro else 13)
 
 	# ---------- Pola tekstowe ----------
 	var edit: StyleBox
 	var edit_focus: StyleBox
 	var text_area: StyleBox
-	if classic:
-		edit = _tex_box(s.classic_dir + "/inputs/lineedit_normal_9slice.png", 4, 6)
-		edit_focus = _tex_box(s.classic_dir + "/inputs/lineedit_focus_9slice.png", 4, 6)
-		text_area = _tex_box(s.classic_dir + "/inputs/textedit_normal_9slice.png", 4, 8)
+	if pack:
+		edit = _tex_box(s.pack_dir + "/inputs/lineedit_normal_9slice.png", m_input, 6)
+		edit_focus = _tex_box(s.pack_dir + "/inputs/lineedit_focus_9slice.png", m_input, 6)
+		text_area = _tex_box(s.pack_dir + "/inputs/textedit_normal_9slice.png", m_input, 8)
 	elif modern:
 		edit = _tex_box(s.modern_dir + "/inputs/line_edit_normal.png", 14, 8)
 		edit_focus = _tex_box(s.modern_dir + "/inputs/line_edit_focus.png", 14, 8)
@@ -363,7 +437,7 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 	theme.set_stylebox("focus", "LineEdit", edit_focus)
 	theme.set_color("font_color", "LineEdit", s.text)
 	theme.set_stylebox("normal", "TextEdit", text_area)
-	theme.set_stylebox("focus", "TextEdit", text_area if (classic or modern) else edit_focus)
+	theme.set_stylebox("focus", "TextEdit", text_area if (pack or modern) else edit_focus)
 	theme.set_stylebox("read_only", "TextEdit", text_area)
 	theme.set_color("font_color", "TextEdit", s.text)
 	theme.set_color("font_readonly_color", "TextEdit", s.text)
@@ -372,15 +446,15 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 	theme.set_color("caret_color", "LineEdit", s.text)
 	theme.set_color("caret_color", "TextEdit", s.text)
 	theme.set_font("font", "TextEdit", font_regular)
-	theme.set_font_size("font_size", "TextEdit", 13 if classic else 14)
+	theme.set_font_size("font_size", "TextEdit", 13 if retro else 14)
 
 	# ---------- Zakładki ----------
-	if classic:
-		theme.set_stylebox("panel", "TabContainer", _tex_box(s.classic_dir + "/tabs/tab_container_9slice.png", 4, 12))
+	if pack:
+		theme.set_stylebox("panel", "TabContainer", _tex_box(s.pack_dir + "/tabs/tab_container_9slice.png", m_tab, 12))
 		_set_tabs(theme, [
-			_tex_box(s.classic_dir + "/tabs/tab_selected_9slice.png", 4, 8),
-			_tex_box(s.classic_dir + "/tabs/tab_unselected_9slice.png", 4, 8),
-			_tex_box(s.classic_dir + "/tabs/tab_hover_9slice.png", 4, 8),
+			_tex_box(s.pack_dir + "/tabs/tab_selected_9slice.png", m_tab, 8),
+			_tex_box(s.pack_dir + "/tabs/tab_unselected_9slice.png", m_tab, 8),
+			_tex_box(s.pack_dir + "/tabs/tab_hover_9slice.png", m_tab, 8),
 		])
 	elif modern:
 		theme.set_stylebox("panel", "TabContainer", _tex_box(s.modern_dir + "/panels/card_520x300.png", 20, 14))
@@ -410,19 +484,19 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 	theme.set_color("font_selected_color", "TabContainer", s.text)
 	theme.set_color("font_unselected_color", "TabContainer", s.text_dim)
 	theme.set_font("font", "TabContainer", font_medium)
-	theme.set_font_size("font_size", "TabContainer", 14 if classic else 15)
+	theme.set_font_size("font_size", "TabContainer", 14 if retro else 15)
 
 	# ---------- Drzewo (listy) ----------
-	if classic:
-		theme.set_stylebox("panel", "Tree", _tex_box(s.classic_dir + "/frames/panel_inset_9slice.png", 4, 6))
-		var th := _tex_box(s.classic_dir + "/frames/table_header_9slice.png", 4, 4)
+	if pack:
+		theme.set_stylebox("panel", "Tree", _tex_box(s.pack_dir + "/frames/panel_inset_9slice.png", m_frame, 6))
+		var th := _tex_box(s.pack_dir + "/frames/table_header_9slice.png", m_frame, 4)
 		for st in ["title_button_normal", "title_button_hover", "title_button_pressed"]:
 			theme.set_stylebox(st, "Tree", th)
 		theme.set_color("title_button_color", "Tree", s.text)
-		theme.set_icon("arrow", "Tree", load(s.classic_dir + "/controls/tree_expanded.png"))
-		theme.set_icon("arrow_collapsed", "Tree", load(s.classic_dir + "/controls/tree_collapsed.png"))
-		theme.set_icon("checked", "Tree", load(s.classic_dir + "/controls/checkbox_checked.png"))
-		theme.set_icon("unchecked", "Tree", load(s.classic_dir + "/controls/checkbox_unchecked.png"))
+		theme.set_icon("arrow", "Tree", load(s.pack_dir + "/controls/tree_expanded.png"))
+		theme.set_icon("arrow_collapsed", "Tree", load(s.pack_dir + "/controls/tree_collapsed.png"))
+		theme.set_icon("checked", "Tree", _scaled_icon(s.pack_dir + "/controls/checkbox_checked.png", 18))
+		theme.set_icon("unchecked", "Tree", _scaled_icon(s.pack_dir + "/controls/checkbox_unchecked.png", 18))
 	elif modern:
 		theme.set_stylebox("panel", "Tree", _tex_box(s.modern_dir + "/inputs/line_edit_normal.png", 14, 6))
 		var th := _tex_box(s.modern_dir + "/table/table_header.png", 10, 4)
@@ -446,13 +520,13 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 
 	# ---------- CheckBox ----------
 	theme.set_color("font_color", "CheckBox", s.text)
-	if classic or modern:
-		var base: String = s.classic_dir if classic else s.modern_dir
+	if pack or modern:
+		var base: String = s.pack_dir if pack else s.modern_dir
 		var checked_path := base + "/controls/checkbox_checked.png"
 		var unchecked_path := base + "/controls/checkbox_unchecked.png"
-		var checked_dis := base + ("/controls/checkbox_checked_disabled.png" if classic else "/controls/checkbox_disabled.png")
-		var unchecked_dis := base + ("/controls/checkbox_unchecked_disabled.png" if classic else "/controls/checkbox_disabled.png")
-		var size := 18 if classic else 20
+		var checked_dis := base + ("/controls/checkbox_checked_disabled.png" if pack else "/controls/checkbox_disabled.png")
+		var unchecked_dis := base + ("/controls/checkbox_unchecked_disabled.png" if pack else "/controls/checkbox_disabled.png")
+		var size := 18 if retro else 20
 		theme.set_icon("checked", "CheckBox", _scaled_icon(checked_path, size))
 		theme.set_icon("unchecked", "CheckBox", _scaled_icon(unchecked_path, size))
 		theme.set_icon("checked_disabled", "CheckBox", _scaled_icon(checked_dis, size))
@@ -463,13 +537,14 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 			theme.set_stylebox(state, "CheckBox", cb_empty)
 
 	# ---------- Paski przewijania ----------
-	if classic or modern:
-		var base2: String = s.classic_dir if classic else s.modern_dir
-		var suffix := "_9slice" if classic else ""
-		var thumb_v := _tex_box(base2 + "/controls/scrollbar_thumb_vertical%s.png" % suffix, 4 if classic else 6, 0)
-		var thumb_h := _tex_box(base2 + "/controls/scrollbar_thumb_horizontal%s.png" % suffix, 4 if classic else 6, 0)
-		var track_v := _tex_box(base2 + "/controls/scrollbar_track_vertical.png", 4 if classic else 6, 0)
-		var track_h := _tex_box(base2 + "/controls/scrollbar_track_horizontal.png", 4 if classic else 6, 0)
+	if pack or modern:
+		var base2: String = s.pack_dir if pack else s.modern_dir
+		var suffix := "_9slice" if pack else ""
+		var m_scroll: int = m_frame if pack else 6
+		var thumb_v := _tex_box(base2 + "/controls/scrollbar_thumb_vertical%s.png" % suffix, m_scroll, 0)
+		var thumb_h := _tex_box(base2 + "/controls/scrollbar_thumb_horizontal%s.png" % suffix, m_scroll, 0)
+		var track_v := _tex_box(base2 + "/controls/scrollbar_track_vertical.png", m_scroll, 0)
+		var track_h := _tex_box(base2 + "/controls/scrollbar_track_horizontal.png", m_scroll, 0)
 		for grabber in ["grabber", "grabber_highlight", "grabber_pressed"]:
 			theme.set_stylebox(grabber, "VScrollBar", thumb_v)
 			theme.set_stylebox(grabber, "HScrollBar", thumb_h)
@@ -477,9 +552,10 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 		theme.set_stylebox("scroll", "HScrollBar", track_h)
 
 	# ---------- ProgressBar ----------
-	if classic:
-		theme.set_stylebox("background", "ProgressBar", _tex_box(s.classic_dir + "/controls/progress_background_9slice.png", 3, 0))
-		theme.set_stylebox("fill", "ProgressBar", _tex_box(s.classic_dir + "/controls/progress_fill_9slice.png", 2, 0))
+	if pack:
+		var m_prog: int = s.get("m_prog", 3)
+		theme.set_stylebox("background", "ProgressBar", _tex_box(s.pack_dir + "/controls/progress_background_9slice.png", m_prog, 0))
+		theme.set_stylebox("fill", "ProgressBar", _tex_box(s.pack_dir + "/controls/progress_fill_9slice.png", maxi(2, m_prog - 1), 0))
 	elif modern:
 		theme.set_stylebox("background", "ProgressBar", _tex_box(s.modern_dir + "/controls/progress_track.png", 6, 0))
 		theme.set_stylebox("fill", "ProgressBar", _tex_box(s.modern_dir + "/controls/progress_fill_blue.png", 6, 0))
@@ -533,38 +609,44 @@ static func _scaled_icon(path: String, size: int) -> Texture2D:
 	return ImageTexture.create_from_image(img)
 
 
-## Styl przycisku. Cztery źródła wyglądu:
-## klasyczne tekstury per stan -> nowoczesne tekstury per stan ->
-## tekstura ninepatch + modulacja -> płaski z kolorów.
+## Styl przycisku. Źródła wyglądu, w kolejności:
+## pakiet nazwany (tekstury per stan; primary z dedykowanego pliku, jeśli jest)
+## -> pakiet Modern (tekstury per stan) -> tekstura ninepatch + modulacja -> płaski.
 static func _setup_button(theme: Theme, type_name: String, s: Dictionary, kind: String, font: Font) -> void:
 	var font_color: Color = s["btn_%s_font" % kind]
-	if s.has("classic_dir"):
-		var dir: String = s.classic_dir + "/buttons"
-		var normal_tex := dir + ("/button_default_9slice.png" if kind == "primary" else "/button_normal_9slice.png")
-		var state_tex := {
-			"normal": normal_tex,
-			"hover": dir + "/button_hover_9slice.png",
-			"pressed": dir + "/button_pressed_9slice.png",
-			"disabled": dir + "/button_disabled_9slice.png",
-			"focus": normal_tex,
-		}
-		for state in state_tex:
-			var sb := _tex_box(state_tex[state], 4, 0)
-			sb.content_margin_left = 14
-			sb.content_margin_right = 14
-			sb.content_margin_top = 6
-			sb.content_margin_bottom = 6
-			theme.set_stylebox(state, type_name, sb)
+	if s.has("pack_dir"):
+		var dir: String = s.pack_dir + "/buttons"
+		var m_btn: int = s.get("m_btn", 4)
+		var btn_content: Array = s.get("btn_content", [14, 6])
+		var primary_file := dir + "/button_primary_9slice.png"
+		if kind == "primary" and ResourceLoader.exists(primary_file):
+			# Dedykowany przycisk primary — stany przez modulację jasności.
+			var states := {"normal": 1.0, "hover": 1.08, "pressed": 0.92, "disabled": 1.0, "focus": 1.0}
+			for state in states:
+				var sb := _tex_box(primary_file, m_btn, 0)
+				var mod: float = states[state]
+				sb.modulate_color = Color(mod, mod, mod, 0.45 if state == "disabled" else 1.0)
+				_btn_content(sb, btn_content)
+				theme.set_stylebox(state, type_name, sb)
+		else:
+			var normal_tex := dir + ("/button_default_9slice.png" if kind == "primary" else "/button_normal_9slice.png")
+			var state_tex := {
+				"normal": normal_tex,
+				"hover": dir + "/button_hover_9slice.png",
+				"pressed": dir + "/button_pressed_9slice.png",
+				"disabled": dir + "/button_disabled_9slice.png",
+				"focus": normal_tex,
+			}
+			for state in state_tex:
+				var sb := _tex_box(state_tex[state], m_btn, 0)
+				_btn_content(sb, btn_content)
+				theme.set_stylebox(state, type_name, sb)
 	elif s.has("modern_dir"):
-		# Pakiet Modern: przycisk „normal” to secondary, primary i danger wprost.
 		var file_kind: String = {"normal": "secondary", "primary": "primary", "danger": "danger"}[kind]
 		for state in ["normal", "hover", "pressed", "disabled", "focus"]:
 			var tex_state: String = "normal" if state == "focus" else state
 			var sb := _tex_box("%s/buttons/button_%s_%s.png" % [s.modern_dir, file_kind, tex_state], 18, 0)
-			sb.content_margin_left = 16
-			sb.content_margin_right = 16
-			sb.content_margin_top = 8
-			sb.content_margin_bottom = 8
+			_btn_content(sb, [16, 8])
 			theme.set_stylebox(state, type_name, sb)
 	else:
 		var tex_path: String = s.get("btn_%s_tex" % kind, "")
@@ -590,10 +672,7 @@ static func _setup_button(theme: Theme, type_name: String, s: Dictionary, kind: 
 				sbf.set_border_width_all(1)
 				sbf.set_corner_radius_all(10)
 				sb = sbf
-			sb.content_margin_left = 18
-			sb.content_margin_right = 18
-			sb.content_margin_top = 8
-			sb.content_margin_bottom = 8
+			_btn_content(sb, [18, 8])
 			theme.set_stylebox(state, type_name, sb)
 	theme.set_font("font", type_name, font)
 	theme.set_color("font_color", type_name, font_color)
@@ -602,3 +681,10 @@ static func _setup_button(theme: Theme, type_name: String, s: Dictionary, kind: 
 	theme.set_color("font_focus_color", type_name, font_color)
 	theme.set_color("font_disabled_color", type_name, Color(font_color, 0.5))
 	theme.set_constant("h_separation", type_name, 8)
+
+
+static func _btn_content(sb: StyleBox, content: Array) -> void:
+	sb.content_margin_left = content[0]
+	sb.content_margin_right = content[0]
+	sb.content_margin_top = content[1]
+	sb.content_margin_bottom = content[1]

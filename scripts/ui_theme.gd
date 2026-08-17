@@ -160,9 +160,12 @@ static func spec(id: String) -> Dictionary:
 				"status_bg": Color("eff3f8"),
 				"btn_normal_tex": "",
 				"btn_normal_bg": Color("ffffff"), "btn_normal_border": Color("d8e1f0"), "btn_normal_font": Color("182235"),
-				"btn_primary_tex": "",
+				# Błyszczące przyciski wycięte z pakietu Modern (light).
+				"btn_primary_tex": "res://assets/modern_light/buttons/button_primary_glossy.png",
+				"btn_primary_margins": [20, 17],
 				"btn_primary_bg": Color("2563eb"), "btn_primary_border": Color("1d4ed8"), "btn_primary_font": Color.WHITE,
-				"btn_danger_tex": "",
+				"btn_danger_tex": "res://assets/modern_light/buttons/button_danger_glossy.png",
+				"btn_danger_margins": [20, 17],
 				"btn_danger_bg": Color("ef4444"), "btn_danger_border": Color("dc2626"), "btn_danger_font": Color.WHITE,
 			}
 

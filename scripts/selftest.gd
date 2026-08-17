@@ -133,7 +133,29 @@ func _init() -> void:
 	failures += _check(web_report.contains("Raport testów strony") and web_report.contains("Dostępność strony"), "WWW: raport HTML")
 	failures += _check(WebTester.report_csv("https://sklep.pl", web_checks).split("\n").size() == web_checks.size() + 2, "WWW: raport CSV")
 
-	# 10. Pełna generacja wszystkich modułów.
+	# 10. Tryb nauki: każdy przypadek ma wyjaśnienie „dlaczego ten test”.
+	var missing_why := 0
+	for c in out.cases:
+		if c.why.strip_edges().is_empty():
+			missing_why += 1
+	failures += _check(missing_why == 0, "wyjaśnienia edukacyjne przypadków (brakuje: %d)" % missing_why)
+	failures += _check(Glossary.TERMS.size() >= 15 and Glossary.as_text().contains("Przypadek testowy"), "słowniczek testera (%d pojęć)" % Glossary.TERMS.size())
+	failures += _check(Exporter.cases_markdown(out.cases, "Sklep").contains("Dlaczego ten test?"), "wyjaśnienia w eksporcie Markdown")
+
+	# 11. Raport z wykonania testów.
+	var run_results := {}
+	run_results[out.cases[0].id] = {"status": "Zaliczony", "note": ""}
+	run_results[out.cases[1].id] = {"status": "Niezaliczony", "note": "Przycisk nie reaguje"}
+	run_results[out.cases[2].id] = {"status": "Zablokowany", "note": ""}
+	var rc := RunReport.counts(out.cases, run_results)
+	failures += _check(rc["Zaliczony"] == 1 and rc["Niezaliczony"] == 1 and rc["Zablokowany"] == 1 and rc["Niewykonany"] == out.cases.size() - 3, "zliczanie wyników wykonania")
+	var run_md := RunReport.markdown(out.cases, run_results, "Sklep testowy", "Jan Kowalski")
+	failures += _check(run_md.contains("Przypadki niezaliczone") and run_md.contains("Przycisk nie reaguje"), "raport wykonania Markdown")
+	var run_html := RunReport.html(out.cases, run_results, "Sklep testowy", "")
+	failures += _check(run_html.contains("Niezaliczone: 1") and run_html.contains(out.cases[1].id), "raport wykonania HTML")
+	failures += _check(RunReport.csv(out.cases, run_results).split("\n").size() == out.cases.size() + 1, "raport wykonania CSV")
+
+	# 12. Pełna generacja wszystkich modułów.
 	var out_all := TestGenerator.generate(modules, TestGenerator.Options.new())
 	print("Moduły: %d | Przypadki (1 moduł): %d | Przypadki (wszystkie): %d" % [modules.size(), out.cases.size(), out_all.cases.size()])
 

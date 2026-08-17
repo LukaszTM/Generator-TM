@@ -15,6 +15,15 @@ class TestCase:
 	var steps: Array[String] = []
 	var test_data := ""
 	var expected := ""
+	var why := ""                # tryb nauki: dlaczego ten test istnieje / jaka technika
+
+# Domyślne wyjaśnienia edukacyjne wg typu testu (tryb nauki).
+const WHY_BY_TYPE := {
+	"Pozytywny": "Test pozytywny (tzw. ścieżka szczęśliwa) — najpierw potwierdzamy, że funkcja w ogóle działa zgodnie z dokumentacją. Dopiero na działającej funkcji szukanie błędów ma sens.",
+	"Negatywny": "Test negatywny — celowo podajemy błędne dane lub łamiemy warunki, bo aplikacja musi zawieść bezpiecznie: czytelny komunikat i brak utraty danych. Technika: niepoprawne klasy równoważności.",
+	"Brzegowy": "Test brzegowy — błędy najczęściej kryją się na granicach zakresów: wartość minimalna, maksymalna, pusta albo o jeden za duża. Technika: analiza wartości brzegowych.",
+	"Bezpieczeństwo": "Test bezpieczeństwa — sprawdzamy odporność na nadużycia i złośliwe dane. Aplikacja ma chronić dane nawet wtedy, gdy ktoś świadomie próbuje ją oszukać.",
+}
 
 ## Parametry generowania.
 class Options:
@@ -49,17 +58,20 @@ static func _rules() -> Array[Dictionary]:
 				 "pre": "Istnieje aktywne konto użytkownika.",
 				 "steps": ["Otwórz ekran logowania.", "Wprowadź poprawny identyfikator (login/e-mail).", "Wprowadź poprawne hasło.", "Zatwierdź przyciskiem logowania."],
 				 "data": "Poprawny login i hasło istniejącego użytkownika.",
-				 "expected": "Użytkownik zostaje zalogowany i przeniesiony do widoku startowego; sesja jest aktywna."},
+				 "expected": "Użytkownik zostaje zalogowany i przeniesiony do widoku startowego; sesja jest aktywna.",
+				 "why": "Logowanie to najczęściej używana funkcja aplikacji — jej awaria blokuje wszystko inne, dlatego zawsze testujemy ją jako pierwszą i z wysokim priorytetem."},
 				{"title": "Logowanie z błędnym hasłem", "type": "Negatywny", "priority": "Wysoki",
 				 "pre": "Istnieje aktywne konto użytkownika.",
 				 "steps": ["Otwórz ekran logowania.", "Wprowadź poprawny identyfikator.", "Wprowadź błędne hasło.", "Zatwierdź przyciskiem logowania."],
 				 "data": "Poprawny login, losowe błędne hasło.",
-				 "expected": "Logowanie odrzucone, czytelny komunikat o błędnych danych; hasło nie jest ujawniane w komunikacie ani w adresie URL."},
+				 "expected": "Logowanie odrzucone, czytelny komunikat o błędnych danych; hasło nie jest ujawniane w komunikacie ani w adresie URL.",
+				 "why": "Sprawdzamy nie tylko odrzucenie, ale i treść komunikatu — zbyt szczegółowy komunikat („złe hasło”) zdradza napastnikowi, że login istnieje. To pogranicze testu negatywnego i bezpieczeństwa."},
 				{"title": "Logowanie na nieistniejące konto", "type": "Negatywny", "priority": "Średni",
 				 "pre": "Brak konta o podanym identyfikatorze.",
 				 "steps": ["Otwórz ekran logowania.", "Wprowadź identyfikator, który nie istnieje w systemie.", "Wprowadź dowolne hasło.", "Zatwierdź."],
 				 "data": "Login: nieistniejacy_uzytkownik@test.pl",
-				 "expected": "Logowanie odrzucone; komunikat nie zdradza, czy konto istnieje (ochrona przed enumeracją kont)."},
+				 "expected": "Logowanie odrzucone; komunikat nie zdradza, czy konto istnieje (ochrona przed enumeracją kont).",
+				 "why": "Komunikat błędu nie może zdradzać, czy konto istnieje — inaczej można masowo wyliczać zarejestrowanych użytkowników (tzw. enumeracja kont)."},
 				{"title": "Logowanie z pustymi polami", "type": "Brzegowy", "priority": "Średni",
 				 "pre": "Ekran logowania jest otwarty.",
 				 "steps": ["Pozostaw pola loginu i hasła puste.", "Zatwierdź przyciskiem logowania."],
@@ -69,7 +81,8 @@ static func _rules() -> Array[Dictionary]:
 				 "pre": "Istnieje aktywne konto użytkownika.",
 				 "steps": ["Wykonaj co najmniej 10 prób logowania z błędnym hasłem.", "Obserwuj zachowanie systemu."],
 				 "data": "Poprawny login, błędne hasła.",
-				 "expected": "System ogranicza próby (blokada czasowa, CAPTCHA lub inne zabezpieczenie) zgodnie z dokumentacją."},
+				 "expected": "System ogranicza próby (blokada czasowa, CAPTCHA lub inne zabezpieczenie) zgodnie z dokumentacją.",
+				 "why": "Bez ograniczenia liczby prób napastnik może zgadywać hasła w nieskończoność (atak siłowy). Blokada czasowa, opóźnienie lub CAPTCHA to standardowe zabezpieczenia."},
 			],
 		},
 		{
@@ -137,7 +150,8 @@ static func _rules() -> Array[Dictionary]:
 				 "pre": "Formularz jest dostępny dla użytkownika.",
 				 "steps": ["Wprowadź w pola tekstowe znaki specjalne, cudzysłowy i fragmenty znaczników HTML.", "Zatwierdź formularz.", "Wyświetl zapisane dane."],
 				 "data": "Np. „<b>test</b>”, „O'Brien”, „&amp;”, polskie znaki diakrytyczne.",
-				 "expected": "Dane są bezpiecznie zapisane i wyświetlane jako tekst (bez wykonania kodu), polskie znaki nie są zniekształcane."},
+				 "expected": "Dane są bezpiecznie zapisane i wyświetlane jako tekst (bez wykonania kodu), polskie znaki nie są zniekształcane.",
+				 "why": "Jeśli aplikacja wykona wpisany kod zamiast potraktować go jak zwykły tekst, mamy podatność XSS — jedną z najczęstszych dziur bezpieczeństwa aplikacji webowych. Nazwisko „O'Brien” z apostrofem to z kolei klasyczny sprawdzian obsługi cudzysłowów."},
 			],
 		},
 		{
@@ -195,7 +209,8 @@ static func _rules() -> Array[Dictionary]:
 				 "pre": "Brak rekordów spełniających kryteria widoku.",
 				 "steps": ["Otwórz widok listy bez danych (lub przefiltruj tak, aby nie było wyników)."],
 				 "data": "Brak rekordów.",
-				 "expected": "Czytelny komunikat o braku danych; brak błędów interfejsu."},
+				 "expected": "Czytelny komunikat o braku danych; brak błędów interfejsu.",
+				 "why": "Stan pusty to klasyka zapomnianych przypadków — ekrany projektuje się z przykładowymi danymi, a użytkownik często zaczyna od zera. Zero elementów to wartość brzegowa listy."},
 				{"title": "Nawigacja między stronami wyników", "type": "Pozytywny", "priority": "Średni",
 				 "pre": "Liczba rekordów przekracza rozmiar jednej strony.",
 				 "steps": ["Przejdź na kolejną stronę wyników.", "Przejdź na ostatnią stronę.", "Wróć na pierwszą stronę."],
@@ -258,7 +273,8 @@ static func _rules() -> Array[Dictionary]:
 				 "pre": "W koszyku znajduje się kilka pozycji o różnych cenach.",
 				 "steps": ["Dodaj do koszyka kilka pozycji.", "Zweryfikuj sumę częściową, podatki/rabaty i sumę końcową."],
 				 "data": "Pozycje o znanych cenach.",
-				 "expected": "Wszystkie kwoty są policzone poprawnie i zgodne z cennikiem."},
+				 "expected": "Wszystkie kwoty są policzone poprawnie i zgodne z cennikiem.",
+				 "why": "Błędy w pieniądzach są najkosztowniejsze i najbardziej podważają zaufanie. Kwoty liczymy na z góry znanych danych, żeby móc samodzielnie zweryfikować każdy grosz."},
 			],
 		},
 		{
@@ -290,7 +306,8 @@ static func _rules() -> Array[Dictionary]:
 				 "pre": "Endpoint wymaga uwierzytelnienia.",
 				 "steps": ["Wyślij żądanie bez tokenu oraz z niepoprawnym tokenem."],
 				 "data": "Brak nagłówka autoryzacji / token nieważny.",
-				 "expected": "Odpowiedź 401/403; dane nie są zwracane."},
+				 "expected": "Odpowiedź 401/403; dane nie są zwracane.",
+				 "why": "API trzeba testować bezpośrednio — interfejs może ukrywać przycisk, ale żądanie i tak da się wysłać ręcznie. Zabezpieczenie musi działać po stronie serwera."},
 			],
 		},
 		{
@@ -306,7 +323,8 @@ static func _rules() -> Array[Dictionary]:
 				 "pre": "Istnieje konto bez uprawnień do funkcji.",
 				 "steps": ["Zaloguj się na konto bez uprawnień.", "Spróbuj otworzyć funkcję (także bezpośrednim adresem URL, jeśli dotyczy)."],
 				 "data": "Konto o niższej roli; bezpośredni link do funkcji.",
-				 "expected": "Dostęp zablokowany (komunikat lub przekierowanie); dane nie są ujawniane."},
+				 "expected": "Dostęp zablokowany (komunikat lub przekierowanie); dane nie są ujawniane.",
+				 "why": "Ukrycie przycisku czy linku to nie zabezpieczenie — kontrola dostępu musi być egzekwowana na serwerze przy każdym żądaniu, dlatego próbujemy wejść „bocznymi drzwiami”."},
 			],
 		},
 		{
@@ -407,6 +425,7 @@ static func _case_from_template(module_name: String, tmpl: Dictionary) -> TestCa
 		c.steps.append(s)
 	c.test_data = tmpl["data"]
 	c.expected = tmpl["expected"]
+	c.why = tmpl.get("why", WHY_BY_TYPE.get(c.type, ""))
 	return c
 
 
@@ -427,6 +446,7 @@ static func _generic_case(module_name: String, sentence: String) -> TestCase:
 	]
 	c.test_data = "Dane zgodne z opisem wymagania w dokumentacji."
 	c.expected = "Zachowanie aplikacji jest zgodne z wymaganiem: „%s”." % sentence.strip_edges()
+	c.why = "Przypadek utworzony wprost z zapisu w dokumentacji — weryfikujemy zgodność zachowania z wymaganiem. Dokumentacja to nasza „wyrocznia testowa”: źródło wiedzy o tym, co jest poprawne."
 	return c
 
 
@@ -444,6 +464,7 @@ static func _smoke_case(module_name: String) -> TestCase:
 	]
 	c.test_data = "—"
 	c.expected = "Moduł uruchamia się i podstawowa operacja kończy się powodzeniem, bez błędów interfejsu."
+	c.why = "Test dymny — krótka kontrola „czy to w ogóle działa”, wykonywana przed właściwymi testami. Jeśli test dymny pada, dalsze testowanie modułu nie ma sensu."
 	return c
 
 

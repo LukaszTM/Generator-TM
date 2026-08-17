@@ -4,7 +4,7 @@ extends Control
 
 const APP_TITLE := "Generator TM"
 const APP_SUBTITLE := "plany testów i przypadki testowe"
-const VERSION := "1.6"
+const VERSION := "1.7"
 const SETTINGS_PATH := "user://ustawienia.cfg"
 
 # --- Stan aplikacji ---
@@ -67,6 +67,18 @@ var bug_details: TextEdit
 var bug_export_format: OptionButton
 var bug_export_status: Label
 
+var runner_tree: Tree
+var runner_details: TextEdit
+var runner_note: TextEdit
+var runner_summary: Label
+var runner_progress: ProgressBar
+var runner_export_format: OptionButton
+var runner_export_status: Label
+var run_results := {}              # case_id -> {"status": String, "note": String}
+var runner_current := -1           # indeks aktualnie oglądanego przypadku
+var glossary_window: Window
+var glossary_text: TextEdit
+
 var web_url_edit: LineEdit
 var web_run_button: Button
 var web_progress: ProgressBar
@@ -86,6 +98,7 @@ var save_dialog: FileDialog
 var bug_attach_dialog: FileDialog
 var bug_save_dialog: FileDialog
 var web_save_dialog: FileDialog
+var runner_save_dialog: FileDialog
 
 
 func _ready() -> void:
@@ -173,12 +186,13 @@ func _build_layout() -> void:
 	tabs.add_child(_build_modules_tab())
 	tabs.add_child(_build_plan_tab())
 	tabs.add_child(_build_cases_tab())
+	tabs.add_child(_build_runner_tab())
 	tabs.add_child(_build_export_tab())
 	tabs.add_child(_build_bugs_tab())
 	tabs.add_child(_build_web_tab())
 	# Tytuły ustawiane wprost — nazwy węzłów nie mogą zawierać kropki.
-	var tab_titles := ["1. Źródła", "2. Moduły i opcje", "3. Plan testów", "4. Przypadki testowe", "5. Eksport", "6. Raport błędów", "7. Testy WWW"]
-	tab_icon_names = ["folder", "modules", "plan", "cases", "export", "bugs", "globe"]
+	var tab_titles := ["1. Źródła", "2. Moduły i opcje", "3. Plan testów", "4. Przypadki testowe", "5. Wykonanie testów", "6. Eksport", "7. Raport błędów", "8. Testy WWW"]
+	tab_icon_names = ["folder", "modules", "plan", "cases", "checklist", "export", "bugs", "globe"]
 	for i in tab_icon_names.size():
 		tabs.set_tab_title(i, tab_titles[i])
 		tabs.set_tab_icon(i, _icon_tex(tab_icon_names[i]))
@@ -476,7 +490,100 @@ func _build_cases_tab() -> Control:
 	return page
 
 
-# ---------------- Zakładka 5: Eksport ----------------
+# ---------------- Zakładka 5: Wykonanie testów ----------------
+func _build_runner_tab() -> Control:
+	var page := VBoxContainer.new()
+	page.name = "Wykonanie"
+	page.add_theme_constant_override("separation", 10)
+
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 12)
+	page.add_child(top)
+	runner_summary = Label.new()
+	runner_summary.theme_type_variation = "CardTitle"
+	runner_summary.text = "Wygeneruj przypadki (zakładka 2), aby rozpocząć wykonanie."
+	runner_summary.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(runner_summary)
+	runner_progress = ProgressBar.new()
+	runner_progress.custom_minimum_size = Vector2(220, 14)
+	runner_progress.min_value = 0
+	runner_progress.max_value = 100
+	runner_progress.show_percentage = false
+	top.add_child(runner_progress)
+	var gloss_btn := _button("Słowniczek testera", "doc")
+	gloss_btn.pressed.connect(_on_show_glossary)
+	top.add_child(gloss_btn)
+
+	var split := HSplitContainer.new()
+	split.split_offset = 620
+	split.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(split)
+
+	runner_tree = Tree.new()
+	runner_tree.columns = 3
+	runner_tree.column_titles_visible = true
+	runner_tree.set_column_title(0, "ID")
+	runner_tree.set_column_title(1, "Tytuł")
+	runner_tree.set_column_title(2, "Status")
+	runner_tree.set_column_expand(0, false)
+	runner_tree.set_column_expand(1, true)
+	runner_tree.set_column_expand(2, false)
+	runner_tree.set_column_custom_minimum_width(0, 150)
+	runner_tree.set_column_custom_minimum_width(2, 130)
+	runner_tree.hide_root = true
+	runner_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	runner_tree.item_selected.connect(_on_runner_case_selected)
+	split.add_child(runner_tree)
+
+	var right := VBoxContainer.new()
+	right.add_theme_constant_override("separation", 8)
+	split.add_child(right)
+	runner_details = TextEdit.new()
+	runner_details.editable = false
+	runner_details.placeholder_text = "Zaznacz przypadek na liście — zobaczysz kroki do wykonania i wyjaśnienie, po co jest ten test."
+	runner_details.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	runner_details.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right.add_child(runner_details)
+	right.add_child(_field_label("Notatka z wykonania (opcjonalna — np. co zaobserwowano):"))
+	runner_note = TextEdit.new()
+	runner_note.custom_minimum_size = Vector2(0, 64)
+	right.add_child(runner_note)
+	var verdict_row := HBoxContainer.new()
+	verdict_row.add_theme_constant_override("separation", 8)
+	right.add_child(verdict_row)
+	var pass_btn := _button("Zaliczony", "checklist", "PrimaryButton")
+	pass_btn.pressed.connect(func() -> void: _on_set_verdict("Zaliczony"))
+	verdict_row.add_child(pass_btn)
+	var fail_btn := _button("Niezaliczony", "delete", "DangerButton")
+	fail_btn.pressed.connect(func() -> void: _on_set_verdict("Niezaliczony"))
+	verdict_row.add_child(fail_btn)
+	var block_btn := _button("Zablokowany")
+	block_btn.pressed.connect(func() -> void: _on_set_verdict("Zablokowany"))
+	verdict_row.add_child(block_btn)
+	var report_btn := _button("Zgłoś błąd…", "bugs")
+	report_btn.tooltip_text = "Oznacza przypadek jako niezaliczony i wypełnia formularz zgłoszenia jego danymi."
+	report_btn.pressed.connect(_on_report_bug_from_case)
+	verdict_row.add_child(report_btn)
+
+	var bottom := HBoxContainer.new()
+	bottom.add_theme_constant_override("separation", 8)
+	page.add_child(bottom)
+	runner_export_format = OptionButton.new()
+	runner_export_format.add_item("HTML (.html)")
+	runner_export_format.add_item("Markdown (.md)")
+	runner_export_format.add_item("CSV (.csv)")
+	bottom.add_child(runner_export_format)
+	var save_btn := _button("Zapisz raport z wykonania…", "export")
+	save_btn.pressed.connect(_on_export_run)
+	bottom.add_child(save_btn)
+	runner_export_status = Label.new()
+	runner_export_status.theme_type_variation = "DimLabel"
+	runner_export_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bottom.add_child(runner_export_status)
+	return page
+
+
+# ---------------- Zakładka 6: Eksport ----------------
 func _build_export_tab() -> Control:
 	var page := VBoxContainer.new()
 	page.name = "Eksport"
@@ -806,6 +913,27 @@ func _build_dialogs() -> void:
 	web_save_dialog.file_selected.connect(_on_web_save_path_chosen)
 	add_child(web_save_dialog)
 
+	runner_save_dialog = FileDialog.new()
+	runner_save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	runner_save_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	runner_save_dialog.title = "Zapisz raport z wykonania testów"
+	runner_save_dialog.file_selected.connect(_on_run_save_path_chosen)
+	add_child(runner_save_dialog)
+
+	# Okno słowniczka (tryb nauki).
+	glossary_window = Window.new()
+	glossary_window.title = "Słowniczek testera"
+	glossary_window.size = Vector2i(700, 540)
+	glossary_window.visible = false
+	glossary_window.close_requested.connect(func() -> void: glossary_window.hide())
+	glossary_text = TextEdit.new()
+	glossary_text.editable = false
+	glossary_text.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	glossary_text.text = Glossary.as_text()
+	glossary_text.set_anchors_preset(Control.PRESET_FULL_RECT)
+	glossary_window.add_child(glossary_text)
+	add_child(glossary_window)
+
 
 # ============================================================
 #  MOTYWY
@@ -1056,8 +1184,11 @@ func _on_generate() -> void:
 	output = TestGenerator.generate(selected, options)
 	plan_view.text = output.plan_markdown
 	_fill_cases_tree()
+	run_results = {}
+	runner_current = -1
+	_fill_runner_tree()
 	tabs.current_tab = 2
-	_set_status("Wygenerowano plan testów i %d przypadków dla %d modułów. Wyniki znajdziesz w zakładkach 3 i 4, zapis — w zakładce 5." % [output.cases.size(), selected.size()])
+	_set_status("Wygenerowano plan testów i %d przypadków dla %d modułów. Wykonanie testów — zakładka 5, zapis dokumentów — zakładka 6." % [output.cases.size(), selected.size()])
 
 
 func _fill_cases_tree() -> void:
@@ -1105,6 +1236,10 @@ func _on_case_selected() -> void:
 	lines.append("")
 	lines.append("Oczekiwany rezultat:")
 	lines.append("  " + c.expected)
+	if c.why != "":
+		lines.append("")
+		lines.append("💡 Dlaczego ten test?")
+		lines.append("  " + c.why)
 	case_details.text = "\n".join(lines)
 
 
@@ -1153,12 +1288,212 @@ func _on_save_path_chosen(path: String) -> void:
 
 
 # ============================================================
+#  WYKONANIE TESTÓW
+# ============================================================
+const VERDICT_COLORS := {
+	"Zaliczony": Color("18ba62"), "Niezaliczony": Color("e5484d"),
+	"Zablokowany": Color("e8971f"),
+}
+
+
+func _fill_runner_tree() -> void:
+	runner_tree.clear()
+	runner_details.text = ""
+	runner_note.text = ""
+	if output == null or output.cases.is_empty():
+		runner_summary.text = "Wygeneruj przypadki (zakładka 2), aby rozpocząć wykonanie."
+		runner_progress.value = 0
+		return
+	var root := runner_tree.create_item()
+	var module_items := {}
+	for i in output.cases.size():
+		var c: TestGenerator.TestCase = output.cases[i]
+		if not module_items.has(c.module):
+			var mi := runner_tree.create_item(root)
+			mi.set_text(1, "Moduł: " + c.module)
+			for col in 3:
+				mi.set_selectable(col, false)
+			mi.set_custom_color(1, UITheme.color(current_theme_id, "accent"))
+			module_items[c.module] = mi
+		var item := runner_tree.create_item(module_items[c.module])
+		item.set_text(0, c.id)
+		item.set_text(1, c.title)
+		item.set_metadata(0, i)
+		_update_runner_row(item, c.id)
+	_update_runner_summary()
+
+
+func _update_runner_row(item: TreeItem, case_id: String) -> void:
+	var status: String = run_results.get(case_id, {}).get("status", "Niewykonany")
+	item.set_text(2, status)
+	item.set_custom_color(2, VERDICT_COLORS.get(status, UITheme.color(current_theme_id, "text_dim")))
+
+
+func _update_runner_summary() -> void:
+	if output == null:
+		return
+	runner_summary.text = RunReport.summary_line(output.cases, run_results)
+	var n := RunReport.counts(output.cases, run_results)
+	var done: int = output.cases.size() - n["Niewykonany"]
+	runner_progress.value = 100.0 * done / maxi(1, output.cases.size())
+
+
+## Zapisuje notatkę aktualnie oglądanego przypadku (bez zmiany statusu).
+func _store_runner_note() -> void:
+	if runner_current < 0 or output == null or runner_current >= output.cases.size():
+		return
+	var case_id: String = output.cases[runner_current].id
+	var entry: Dictionary = run_results.get(case_id, {"status": "Niewykonany", "note": ""})
+	entry["note"] = runner_note.text.strip_edges()
+	run_results[case_id] = entry
+
+
+func _on_runner_case_selected() -> void:
+	_store_runner_note()
+	var item := runner_tree.get_selected()
+	if item == null or item.get_metadata(0) == null:
+		return
+	runner_current = item.get_metadata(0)
+	var c: TestGenerator.TestCase = output.cases[runner_current]
+	var lines: Array[String] = []
+	lines.append("%s — %s" % [c.id, c.title])
+	lines.append("Moduł: %s   Typ: %s   Priorytet: %s" % [c.module, c.type, c.priority])
+	lines.append("")
+	lines.append("Warunki wstępne: %s" % c.preconditions)
+	lines.append("Dane testowe:    %s" % c.test_data)
+	lines.append("")
+	lines.append("Kroki do wykonania:")
+	for i in c.steps.size():
+		lines.append("  %d. %s" % [i + 1, c.steps[i]])
+	lines.append("")
+	lines.append("Oczekiwany rezultat:")
+	lines.append("  " + c.expected)
+	if c.why != "":
+		lines.append("")
+		lines.append("💡 Dlaczego ten test?")
+		lines.append("  " + c.why)
+	runner_details.text = "\n".join(lines)
+	runner_note.text = run_results.get(c.id, {}).get("note", "")
+
+
+func _on_set_verdict(status: String) -> void:
+	var item := runner_tree.get_selected()
+	if item == null or item.get_metadata(0) == null:
+		_show_error("Zaznacz przypadek na liście, aby ustawić jego wynik.")
+		return
+	runner_current = item.get_metadata(0)
+	var c: TestGenerator.TestCase = output.cases[runner_current]
+	run_results[c.id] = {"status": status, "note": runner_note.text.strip_edges()}
+	_update_runner_row(item, c.id)
+	_update_runner_summary()
+	# Przejdź do następnego niewykonanego przypadku.
+	var next := _next_unexecuted_item(item)
+	if next != null:
+		next.select(0)
+		runner_tree.scroll_to_item(next)
+	else:
+		_set_status("Wykonanie zakończone: %s. Zapisz raport z wykonania przyciskiem na dole." % RunReport.summary_line(output.cases, run_results))
+
+
+func _next_unexecuted_item(from_item: TreeItem) -> TreeItem:
+	# Najpierw szukaj w dół od bieżącego, potem od początku drzewa.
+	var item := from_item.get_next_in_tree()
+	var wrapped := false
+	while true:
+		if item == null:
+			if wrapped:
+				return null
+			wrapped = true
+			item = runner_tree.get_root().get_next_in_tree()
+			continue
+		if item == from_item:
+			return null
+		if item.get_metadata(0) != null:
+			var c: TestGenerator.TestCase = output.cases[item.get_metadata(0)]
+			if run_results.get(c.id, {}).get("status", "Niewykonany") == "Niewykonany":
+				return item
+		item = item.get_next_in_tree()
+	return null
+
+
+func _on_report_bug_from_case() -> void:
+	var item := runner_tree.get_selected()
+	if item == null or item.get_metadata(0) == null:
+		_show_error("Zaznacz przypadek, z którego chcesz zgłosić błąd.")
+		return
+	runner_current = item.get_metadata(0)
+	var c: TestGenerator.TestCase = output.cases[runner_current]
+	var note := runner_note.text.strip_edges()
+	run_results[c.id] = {"status": "Niezaliczony", "note": note}
+	_update_runner_row(item, c.id)
+	_update_runner_summary()
+	# Wypełnij formularz zgłoszenia danymi przypadku.
+	tabs.current_tab = 6
+	_refresh_bug_selectors()
+	bug_title_edit.text = "%s — nie działa zgodnie z oczekiwaniem" % c.title
+	for i in bug_module_option.item_count:
+		if bug_module_option.get_item_text(i) == c.module:
+			bug_module_option.selected = i
+	for i in bug_case_option.item_count:
+		if bug_case_option.get_item_text(i).begins_with(c.id):
+			bug_case_option.selected = i
+	var steps_text := ""
+	for i in c.steps.size():
+		steps_text += "%s\n" % c.steps[i]
+	bug_steps_edit.text = steps_text.strip_edges()
+	bug_expected_edit.text = c.expected
+	bug_actual_edit.text = note
+	_set_status("Formularz zgłoszenia wypełniony danymi przypadku %s — uzupełnij rezultat aktualny, dodaj zrzut i kliknij „Dodaj zgłoszenie”." % c.id)
+
+
+func _on_show_glossary() -> void:
+	glossary_window.theme = theme
+	glossary_window.popup_centered()
+
+
+func _on_export_run() -> void:
+	if output == null or output.cases.is_empty():
+		_show_error("Najpierw wygeneruj przypadki i wykonaj testy.")
+		return
+	_store_runner_note()
+	var ext: String = ["html", "md", "csv"][runner_export_format.selected]
+	runner_save_dialog.filters = PackedStringArray(["*.%s ; Pliki %s" % [ext, ext.to_upper()]])
+	runner_save_dialog.current_file = "raport_wykonania_%s.%s" % [Time.get_date_string_from_system(), ext]
+	runner_save_dialog.popup_centered_ratio(0.7)
+
+
+func _on_run_save_path_chosen(path: String) -> void:
+	var ext: String = ["html", "md", "csv"][runner_export_format.selected]
+	if path.get_extension().to_lower() != ext:
+		path += "." + ext
+	var project := opt_project.text.strip_edges()
+	if project.is_empty():
+		project = "Aplikacja"
+	var author := opt_author.text.strip_edges()
+	var content := ""
+	match ext:
+		"html":
+			content = RunReport.html(output.cases, run_results, project, author)
+		"md":
+			content = RunReport.markdown(output.cases, run_results, project, author)
+		"csv":
+			content = RunReport.csv(output.cases, run_results)
+	var err := Exporter.save_text(path, content)
+	if err != "":
+		runner_export_status.text = "Błąd: " + err
+		_show_error(err)
+		return
+	runner_export_status.text = "Zapisano: %s" % path
+	_set_status("Zapisano raport z wykonania testów: %s" % path)
+
+
+# ============================================================
 #  RAPORT BŁĘDÓW
 # ============================================================
 func _on_tab_changed(tab_index: int) -> void:
-	if tab_index == 5:
+	if tab_index == 6:
 		_refresh_bug_selectors()
-	elif tab_index == 6:
+	elif tab_index == 7:
 		# Podpowiedz adres testowanej aplikacji, jeśli podano URL.
 		if web_url_edit.text.strip_edges().is_empty() and app_result != null and DocLoader.is_url(app_result.source_label):
 			web_url_edit.text = app_result.source_label
@@ -1418,7 +1753,7 @@ func _on_web_to_bugs() -> void:
 		_show_error("Brak problemów (BŁĄD/UWAGA) do przeniesienia — wszystkie kontrole zaliczone.")
 		return
 	_fill_bugs_tree()
-	tabs.current_tab = 5
+	tabs.current_tab = 6
 	_set_status("Dodano %d zgłoszeń z testów strony do raportu błędów." % added)
 
 

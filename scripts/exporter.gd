@@ -21,6 +21,9 @@ static func case_to_markdown(c: TestGenerator.TestCase) -> String:
 		lines.append("%d. %s" % [i + 1, c.steps[i]])
 	lines.append("")
 	lines.append("**Oczekiwany rezultat:** %s" % c.expected)
+	if c.why != "":
+		lines.append("")
+		lines.append("> 💡 **Dlaczego ten test?** %s" % c.why)
 	lines.append("")
 	return "\n".join(lines)
 
@@ -42,12 +45,12 @@ static func cases_markdown(cases: Array[TestGenerator.TestCase], project_name: S
 ## CSV rozdzielany średnikami (przyjazny polskim ustawieniom Excela).
 static func cases_csv(cases: Array[TestGenerator.TestCase]) -> String:
 	var lines: Array[String] = []
-	lines.append(_csv_row(["ID", "Moduł", "Tytuł", "Typ", "Priorytet", "Warunki wstępne", "Kroki", "Dane testowe", "Oczekiwany rezultat"]))
+	lines.append(_csv_row(["ID", "Moduł", "Tytuł", "Typ", "Priorytet", "Warunki wstępne", "Kroki", "Dane testowe", "Oczekiwany rezultat", "Dlaczego ten test"]))
 	for c in cases:
 		var steps := ""
 		for i in c.steps.size():
 			steps += "%d. %s\n" % [i + 1, c.steps[i]]
-		lines.append(_csv_row([c.id, c.module, c.title, c.type, c.priority, c.preconditions, steps.strip_edges(), c.test_data, c.expected]))
+		lines.append(_csv_row([c.id, c.module, c.title, c.type, c.priority, c.preconditions, steps.strip_edges(), c.test_data, c.expected, c.why]))
 	# BOM na początku pliku pomaga Excelowi rozpoznać UTF-8.
 	return "﻿" + "\n".join(lines)
 
@@ -78,7 +81,10 @@ static func full_html(plan_markdown: String, cases: Array[TestGenerator.TestCase
 		body += "<p><strong>Kroki:</strong></p><ol>"
 		for s in c.steps:
 			body += "<li>%s</li>" % _esc(s)
-		body += "</ol><p><strong>Oczekiwany rezultat:</strong> %s</p></div>" % _esc(c.expected)
+		body += "</ol><p><strong>Oczekiwany rezultat:</strong> %s</p>" % _esc(c.expected)
+		if c.why != "":
+			body += "<p style=\"background:#f2f8ff;border-left:3px solid #1a3fc4;padding:8px 12px\">💡 <strong>Dlaczego ten test?</strong> %s</p>" % _esc(c.why)
+		body += "</div>"
 	body += "</section>"
 	return """<!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8">

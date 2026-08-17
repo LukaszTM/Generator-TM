@@ -105,7 +105,35 @@ func _init() -> void:
 				missing.append(icon_name)
 		failures += _check(missing.is_empty(), "ikony motywu „%s” (brakuje: %s)" % [t["name"], ", ".join(missing)])
 
-	# 9. Pełna generacja wszystkich modułów.
+	# 9. Tester stron WWW — analiza HTML i oceny (offline).
+	var web_html := """<html lang="pl"><head><title>Sklep testowy</title>
+	<meta name="viewport" content="width=device-width"><link rel="icon" href="/fav.png">
+	</head><body><h1>Witaj</h1><img src="a.png" alt="obraz"><img src="b.png">
+	<a href="/kontakt">Kontakt</a><a href="https://example.com/x">Y</a>
+	<a href="podstrona.html">Z</a><a href="#top">kotwica</a><a href="mailto:a@b.pl">mail</a>
+	<img src="http://niezaszyfrowany.pl/obraz.png"><form></form></body></html>"""
+	var parsed := WebTester.parse_page(web_html, "https://sklep.pl/dzial/strona.html")
+	failures += _check(parsed.title == "Sklep testowy", "WWW: tytuł strony (jest: %s)" % parsed.title)
+	failures += _check(parsed.h1_count == 1 and parsed.has_viewport and not parsed.has_description, "WWW: wykrywanie meta i H1")
+	failures += _check(parsed.imgs_no_alt == 2 and parsed.imgs_total == 3, "WWW: obrazy bez alt (%d z %d)" % [parsed.imgs_no_alt, parsed.imgs_total])
+	failures += _check(parsed.links.size() == 3, "WWW: liczba odnośników (jest: %d)" % parsed.links.size())
+	failures += _check(parsed.links.has("https://sklep.pl/kontakt"), "WWW: adres bezwzględny z /")
+	failures += _check(parsed.links.has("https://sklep.pl/dzial/podstrona.html"), "WWW: adres względny")
+	failures += _check(parsed.mixed == 1, "WWW: mieszana treść (jest: %d)" % parsed.mixed)
+	failures += _check(parsed.favicon == "https://sklep.pl/fav.png", "WWW: favicon (jest: %s)" % parsed.favicon)
+	var web_checks := WebTester.evaluate_static(parsed, 200, 800, PackedStringArray(["Content-Type: text/html"]), web_html.length(), "https://sklep.pl/dzial/strona.html")
+	var web_by_name := {}
+	for c in web_checks:
+		web_by_name[c.name] = c.result
+	failures += _check(web_by_name.get("Dostępność strony") == "OK", "WWW: ocena dostępności")
+	failures += _check(web_by_name.get("Mieszana treść (HTTP na HTTPS)") == "BŁĄD", "WWW: ocena mieszanej treści")
+	failures += _check(web_by_name.get("Nagłówki bezpieczeństwa") == "UWAGA", "WWW: ocena nagłówków bezpieczeństwa")
+	failures += _check(web_by_name.get("Opis strony (meta description)") == "UWAGA", "WWW: ocena braku meta description")
+	var web_report := WebTester.report_html("https://sklep.pl", web_checks)
+	failures += _check(web_report.contains("Raport testów strony") and web_report.contains("Dostępność strony"), "WWW: raport HTML")
+	failures += _check(WebTester.report_csv("https://sklep.pl", web_checks).split("\n").size() == web_checks.size() + 2, "WWW: raport CSV")
+
+	# 10. Pełna generacja wszystkich modułów.
 	var out_all := TestGenerator.generate(modules, TestGenerator.Options.new())
 	print("Moduły: %d | Przypadki (1 moduł): %d | Przypadki (wszystkie): %d" % [modules.size(), out.cases.size(), out_all.cases.size()])
 

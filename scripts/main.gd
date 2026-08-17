@@ -4,7 +4,7 @@ extends Control
 
 const APP_TITLE := "Generator TM"
 const APP_SUBTITLE := "plany testów i przypadki testowe"
-const VERSION := "1.5"
+const VERSION := "1.6"
 const SETTINGS_PATH := "user://ustawienia.cfg"
 
 # --- Stan aplikacji ---
@@ -67,7 +67,17 @@ var bug_details: TextEdit
 var bug_export_format: OptionButton
 var bug_export_status: Label
 
+var web_url_edit: LineEdit
+var web_run_button: Button
+var web_progress: ProgressBar
+var web_tree: Tree
+var web_bugs_button: Button
+var web_export_format: OptionButton
+var web_export_status: Label
+var web_checks: Array = []
+
 var http: HTTPRequest
+var web_http: HTTPRequest
 var error_dialog: AcceptDialog
 var open_doc_dialog: FileDialog
 var open_app_file_dialog: FileDialog
@@ -75,6 +85,7 @@ var open_app_dir_dialog: FileDialog
 var save_dialog: FileDialog
 var bug_attach_dialog: FileDialog
 var bug_save_dialog: FileDialog
+var web_save_dialog: FileDialog
 
 
 func _ready() -> void:
@@ -83,6 +94,8 @@ func _ready() -> void:
 
 	http = HTTPRequest.new()
 	add_child(http)
+	web_http = HTTPRequest.new()
+	add_child(web_http)
 
 	error_dialog = AcceptDialog.new()
 	error_dialog.title = "Generator TM"
@@ -162,9 +175,10 @@ func _build_layout() -> void:
 	tabs.add_child(_build_cases_tab())
 	tabs.add_child(_build_export_tab())
 	tabs.add_child(_build_bugs_tab())
+	tabs.add_child(_build_web_tab())
 	# Tytuły ustawiane wprost — nazwy węzłów nie mogą zawierać kropki.
-	var tab_titles := ["1. Źródła", "2. Moduły i opcje", "3. Plan testów", "4. Przypadki testowe", "5. Eksport", "6. Raport błędów"]
-	tab_icon_names = ["folder", "modules", "plan", "cases", "export", "bugs"]
+	var tab_titles := ["1. Źródła", "2. Moduły i opcje", "3. Plan testów", "4. Przypadki testowe", "5. Eksport", "6. Raport błędów", "7. Testy WWW"]
+	tab_icon_names = ["folder", "modules", "plan", "cases", "export", "bugs", "globe"]
 	for i in tab_icon_names.size():
 		tabs.set_tab_title(i, tab_titles[i])
 		tabs.set_tab_icon(i, _icon_tex(tab_icon_names[i]))
@@ -655,6 +669,76 @@ func _build_bugs_tab() -> Control:
 	return page
 
 
+# ---------------- Zakładka 7: Testy WWW ----------------
+func _build_web_tab() -> Control:
+	var page := VBoxContainer.new()
+	page.name = "TestyWWW"
+	page.add_theme_constant_override("separation", 12)
+
+	var parts := _card("Automatyczne testy strony WWW", "globe")
+	page.add_child(parts[0])
+	var box: VBoxContainer = parts[1]
+	var hint := Label.new()
+	hint.theme_type_variation = "DimLabel"
+	hint.text = "Podaj adres strony — program sprawdzi jej dostępność, czas odpowiedzi, HTTPS, podstawy SEO i dostępności (tytuł, opis, H1, teksty alternatywne), favicon, mieszaną treść, nagłówki bezpieczeństwa oraz działanie odnośników (do %d)." % WebTester.MAX_LINKS
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(hint)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	box.add_child(row)
+	web_url_edit = LineEdit.new()
+	web_url_edit.placeholder_text = "np. https://twoja-aplikacja.pl"
+	web_url_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	web_url_edit.text_submitted.connect(func(_t: String) -> void: _on_run_web_tests())
+	row.add_child(web_url_edit)
+	web_run_button = _button("Uruchom testy", "analyze", "PrimaryButton")
+	web_run_button.pressed.connect(_on_run_web_tests)
+	row.add_child(web_run_button)
+	web_progress = ProgressBar.new()
+	web_progress.custom_minimum_size = Vector2(0, 14)
+	web_progress.min_value = 0
+	web_progress.max_value = 100
+	web_progress.show_percentage = false
+	web_progress.visible = false
+	box.add_child(web_progress)
+
+	web_tree = Tree.new()
+	web_tree.columns = 3
+	web_tree.column_titles_visible = true
+	web_tree.set_column_title(0, "Kontrola")
+	web_tree.set_column_title(1, "Wynik")
+	web_tree.set_column_title(2, "Szczegóły")
+	web_tree.set_column_expand(0, false)
+	web_tree.set_column_expand(1, false)
+	web_tree.set_column_expand(2, true)
+	web_tree.set_column_custom_minimum_width(0, 280)
+	web_tree.set_column_custom_minimum_width(1, 90)
+	web_tree.hide_root = true
+	web_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(web_tree)
+
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 8)
+	page.add_child(actions)
+	web_bugs_button = _button("Dodaj problemy do raportu błędów", "bugs")
+	web_bugs_button.disabled = true
+	web_bugs_button.pressed.connect(_on_web_to_bugs)
+	actions.add_child(web_bugs_button)
+	web_export_format = OptionButton.new()
+	web_export_format.add_item("HTML (.html)")
+	web_export_format.add_item("Markdown (.md)")
+	web_export_format.add_item("CSV (.csv)")
+	actions.add_child(web_export_format)
+	var save_btn := _button("Zapisz raport…", "export")
+	save_btn.pressed.connect(_on_export_web)
+	actions.add_child(save_btn)
+	web_export_status = Label.new()
+	web_export_status.theme_type_variation = "DimLabel"
+	web_export_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	actions.add_child(web_export_status)
+	return page
+
+
 func _build_dialogs() -> void:
 	open_doc_dialog = FileDialog.new()
 	open_doc_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
@@ -714,6 +798,13 @@ func _build_dialogs() -> void:
 	bug_save_dialog.title = "Zapisz raport błędów"
 	bug_save_dialog.file_selected.connect(_on_bug_save_path_chosen)
 	add_child(bug_save_dialog)
+
+	web_save_dialog = FileDialog.new()
+	web_save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	web_save_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	web_save_dialog.title = "Zapisz raport testów strony"
+	web_save_dialog.file_selected.connect(_on_web_save_path_chosen)
+	add_child(web_save_dialog)
 
 
 # ============================================================
@@ -1067,6 +1158,10 @@ func _on_save_path_chosen(path: String) -> void:
 func _on_tab_changed(tab_index: int) -> void:
 	if tab_index == 5:
 		_refresh_bug_selectors()
+	elif tab_index == 6:
+		# Podpowiedz adres testowanej aplikacji, jeśli podano URL.
+		if web_url_edit.text.strip_edges().is_empty() and app_result != null and DocLoader.is_url(app_result.source_label):
+			web_url_edit.text = app_result.source_label
 
 
 ## Odświeża listy wyboru modułu i przypadku w formularzu zgłoszenia,
@@ -1254,3 +1349,106 @@ func _on_bug_save_path_chosen(path: String) -> void:
 	if ext == "md":
 		bug_export_status.text += " (zrzuty w folderze %s_zalaczniki)" % path.get_file().get_basename()
 	_set_status("Zapisano raport błędów: %s" % path)
+
+
+# ============================================================
+#  TESTY STRONY WWW
+# ============================================================
+func _on_run_web_tests() -> void:
+	var url := web_url_edit.text.strip_edges()
+	if url.is_empty():
+		_show_error("Podaj adres strony do przetestowania.")
+		return
+	if not DocLoader.is_url(url):
+		url = "https://" + url
+		web_url_edit.text = url
+	web_run_button.disabled = true
+	web_bugs_button.disabled = true
+	web_progress.visible = true
+	web_progress.value = 0
+	web_tree.clear()
+	web_checks = []
+	var progress := func(text: String, percent: float) -> void:
+		_set_status(text)
+		web_progress.value = percent
+	web_checks = await WebTester.run(web_http, url, progress)
+	_fill_web_tree()
+	web_run_button.disabled = false
+	web_bugs_button.disabled = false
+	web_progress.visible = false
+	_set_status("Testy strony zakończone (%s). Wyniki możesz zapisać lub przenieść do raportu błędów." % WebTester.summary(web_checks))
+
+
+func _fill_web_tree() -> void:
+	web_tree.clear()
+	var root := web_tree.create_item()
+	var colors := {
+		"OK": Color("18ba62"), "UWAGA": Color("e8971f"),
+		"BŁĄD": Color("e5484d"), "INFO": UITheme.color(current_theme_id, "text_dim"),
+	}
+	for c in web_checks:
+		var item := web_tree.create_item(root)
+		item.set_text(0, c.name)
+		item.set_text(1, c.result)
+		item.set_text(2, c.details)
+		item.set_custom_color(1, colors.get(c.result, colors["INFO"]))
+		item.set_tooltip_text(2, c.details)
+
+
+func _on_web_to_bugs() -> void:
+	var added := 0
+	for c in web_checks:
+		if c.result != "BŁĄD" and c.result != "UWAGA":
+			continue
+		var b := BugReporter.BugReport.new()
+		bug_counter += 1
+		b.id = "BUG-%03d" % bug_counter
+		b.title = "WWW: %s" % c.name
+		b.module = "Strona WWW"
+		b.severity = "Wysoki" if c.result == "BŁĄD" else "Niski"
+		b.environment = "Test automatyczny strony: %s" % web_url_edit.text.strip_edges()
+		b.reporter = opt_author.text.strip_edges()
+		b.steps = "Otwórz stronę %s\nWykonaj kontrolę: %s" % [web_url_edit.text.strip_edges(), c.name]
+		b.actual = c.details
+		b.expected = "Kontrola „%s” powinna zakończyć się wynikiem OK." % c.name
+		b.date = Time.get_datetime_string_from_system(false, true)
+		bugs.append(b)
+		added += 1
+	if added == 0:
+		_show_error("Brak problemów (BŁĄD/UWAGA) do przeniesienia — wszystkie kontrole zaliczone.")
+		return
+	_fill_bugs_tree()
+	tabs.current_tab = 5
+	_set_status("Dodano %d zgłoszeń z testów strony do raportu błędów." % added)
+
+
+func _on_export_web() -> void:
+	if web_checks.is_empty():
+		_show_error("Najpierw uruchom testy strony.")
+		return
+	var ext: String = ["html", "md", "csv"][web_export_format.selected]
+	web_save_dialog.filters = PackedStringArray(["*.%s ; Pliki %s" % [ext, ext.to_upper()]])
+	web_save_dialog.current_file = "raport_testow_strony_%s.%s" % [Time.get_date_string_from_system(), ext]
+	web_save_dialog.popup_centered_ratio(0.7)
+
+
+func _on_web_save_path_chosen(path: String) -> void:
+	var ext: String = ["html", "md", "csv"][web_export_format.selected]
+	if path.get_extension().to_lower() != ext:
+		path += "." + ext
+	var url := web_url_edit.text.strip_edges()
+	var content := ""
+	match ext:
+		"html":
+			content = WebTester.report_html(url, web_checks)
+		"md":
+			content = WebTester.report_markdown(url, web_checks)
+		"csv":
+			content = WebTester.report_csv(url, web_checks)
+	var err := Exporter.save_text(path, content)
+	if err != "":
+		web_export_status.text = "Błąd: " + err
+		_show_error(err)
+		return
+	web_export_status.text = "Zapisano: %s" % path
+	_set_status("Zapisano raport testów strony: %s" % path)

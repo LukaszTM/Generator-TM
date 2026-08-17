@@ -2,69 +2,81 @@ class_name UITheme
 extends RefCounted
 ## Motywy graficzne aplikacji.
 ##
-## Każdy motyw to "specyfikacja" (Dictionary) z kolorami i (opcjonalnie)
-## ścieżkami tekstur przycisków. Aby dodać własny motyw z nowego pakietu
-## assetów, wystarczy dopisać wpis w themes() oraz spec() — patrz README,
-## sekcja „Jak dodać własny motyw graficzny”.
-
-# --- Ikony wspólne dla wszystkich motywów (pakiet TestPilot Studio) ---
-const ICON_LOGO := "res://assets/icons/testpilot_icons_001.png"      # schowek z checklistą
-const ICON_HOME := "res://assets/icons/testpilot_icons_002.png"      # dom
-const ICON_DOC_NEW := "res://assets/icons/testpilot_icons_003.png"   # dokument +
-const ICON_DOC_DOWN := "res://assets/icons/testpilot_icons_004.png"  # dokument ze strzałką
-const ICON_PACKAGE := "res://assets/icons/testpilot_icons_005.png"   # paczka / aplikacja
-const ICON_CHECKLIST := "res://assets/icons/testpilot_icons_006.png" # lista z ptaszkami
-const ICON_SEARCH := "res://assets/icons/testpilot_icons_007.png"    # lupa
-const ICON_GEAR := "res://assets/icons/testpilot_icons_008.png"      # zębatka
-const ICON_FOLDER := "res://assets/icons/testpilot_icons_010.png"    # folder
-const ICON_CLIPBOARD := "res://assets/icons/testpilot_icons_012.png" # schowek check
-const ICON_GLOBE := "res://assets/icons/testpilot_icons_013.png"     # glob / URL
-const ICON_DOC := "res://assets/icons/testpilot_icons_014.png"       # dokument
-const ICON_FORM := "res://assets/icons/testpilot_icons_015.png"      # formularz
-const ICON_SHIELD := "res://assets/icons/testpilot_icons_016.png"    # tarcza
-const ICON_EXPORT := "res://assets/icons/testpilot_icons_019.png"    # eksport / udostępnij
-const ICON_FILTER := "res://assets/icons/testpilot_icons_020.png"    # lejek / filtr
-const ICON_PENCIL := "res://assets/icons/testpilot_icons_025.png"    # ołówek
-const ICON_LINK := "res://assets/icons/testpilot_icons_040.png"      # łańcuch / link
+## Każdy motyw to "specyfikacja" (Dictionary) z kolorami, wariantem ikon
+## i (opcjonalnie) ścieżkami tekstur przycisków. Oba motywy zbudowane są
+## z pakietu assetów "TestPilot Studio" (wariant jasny i ciemny).
+## Jak dodać własny motyw — patrz README, sekcja „Jak dodać własny motyw graficzny”.
 
 const DEFAULT_THEME_ID := "testpilot_jasny"
+
+# Ikony logiczne -> numer pliku w danym wariancie pakietu.
+# (Warianty były cięte automatycznie, więc numeracja jasna i ciemna się różnią.)
+const ICONS_LIGHT := {
+	"logo": "001", "home": "002", "doc_new": "003", "doc_down": "004",
+	"package": "005", "checklist": "006", "search": "007", "gear": "008",
+	"folder": "010", "clipboard": "012", "globe": "013", "doc": "014",
+	"form": "015", "shield": "016", "export": "019", "filter": "020",
+	"pencil": "025", "link": "040",
+}
+const ICONS_DARK := {
+	"logo": "001", "home": "005", "doc_new": "004", "doc_down": "002",
+	"package": "006", "checklist": "003", "search": "007", "gear": "008",
+	"folder": "010", "clipboard": "011", "globe": "014", "doc": "012",
+	"form": "015", "shield": "016", "export": "013", "filter": "020",
+	"pencil": "024", "link": "035",
+}
 
 
 ## Lista dostępnych motywów: [{id, name}].
 static func themes() -> Array[Dictionary]:
 	return [
 		{"id": "testpilot_jasny", "name": "TestPilot — jasny"},
-		{"id": "grafitowy_ciemny", "name": "Grafitowy — ciemny"},
+		{"id": "testpilot_ciemny", "name": "TestPilot — ciemny"},
 	]
+
+
+## Ścieżka pliku ikony logicznej (np. "folder") w wariancie aktywnego motywu.
+static func icon_path(theme_id: String, name: String) -> String:
+	if spec(theme_id)["icon_variant"] == "dark":
+		return "res://assets/dark/icons/testpilot_dark_icons_%s.png" % ICONS_DARK[name]
+	return "res://assets/icons/testpilot_icons_%s.png" % ICONS_LIGHT[name]
 
 
 ## Specyfikacja motywu. Klucze tekstur (btn_*_tex) mogą być pustym stringiem —
 ## wtedy przycisk jest rysowany płasko z kolorów btn_*_bg / btn_*_border.
+## btn_*_margins = [poziomy, pionowy] margines ninepatch tekstury.
 static func spec(id: String) -> Dictionary:
 	match id:
-		"grafitowy_ciemny":
+		"testpilot_ciemny":
 			return {
-				"name": "Grafitowy — ciemny",
-				"bg": Color("171b26"),
-				"card": Color("1f2534"),
-				"header": Color("141b3f"),
-				"accent": Color("17b3ac"),
-				"text": Color("e9edf6"),
-				"text_dim": Color("98a2b8"),
-				"border": Color("343d52"),
-				"danger": Color("e5484d"),
-				"field_bg": Color("161b28"),
-				"tab_unselected_bg": Color("232a3c"),
-				"tree_sel": Color("1f3a44"),
-				"status_bg": Color("1c2233"),
-				# Ciemny motyw nie używa tekstur — przyciski płaskie.
-				"btn_normal_tex": "", "btn_normal_bg": Color("2a3247"), "btn_normal_border": Color("3d4763"), "btn_normal_font": Color("e9edf6"),
-				"btn_primary_tex": "", "btn_primary_bg": Color("128f89"), "btn_primary_border": Color("17b3ac"), "btn_primary_font": Color.WHITE,
-				"btn_danger_tex": "", "btn_danger_bg": Color("b02a31"), "btn_danger_border": Color("e5484d"), "btn_danger_font": Color.WHITE,
+				"name": "TestPilot — ciemny",
+				"icon_variant": "dark",
+				"bg": Color("0f1a2b"),
+				"card": Color("15263d"),
+				"header": Color("143369"),
+				"accent": Color("1ab5c2"),
+				"text": Color("e8eef8"),
+				"text_dim": Color("9db0c8"),
+				"border": Color("2a4262"),
+				"danger": Color("e04250"),
+				"field_bg": Color("182942"),
+				"tab_unselected_bg": Color("1b2f4d"),
+				"tree_sel": Color("204064"),
+				"status_bg": Color("122238"),
+				"btn_normal_tex": "res://assets/dark/buttons/testpilot_dark_buttons_008.png",
+				"btn_normal_margins": [24, 20],
+				"btn_normal_bg": Color("1b3653"), "btn_normal_border": Color("2a4262"), "btn_normal_font": Color("e8eef8"),
+				"btn_primary_tex": "res://assets/dark/buttons/testpilot_dark_buttons_005.png",
+				"btn_primary_margins": [24, 20],
+				"btn_primary_bg": Color("128f89"), "btn_primary_border": Color("1ab5c2"), "btn_primary_font": Color.WHITE,
+				"btn_danger_tex": "res://assets/dark/buttons/testpilot_dark_buttons_040.png",
+				"btn_danger_margins": [16, 14],
+				"btn_danger_bg": Color("ad0114"), "btn_danger_border": Color("e04250"), "btn_danger_font": Color.WHITE,
 			}
-		_:  # "testpilot_jasny" — motyw domyślny z pakietu TestPilot Studio
+		_:  # "testpilot_jasny" — motyw domyślny
 			return {
 				"name": "TestPilot — jasny",
+				"icon_variant": "light",
 				"bg": Color("f2f5fa"),
 				"card": Color("ffffff"),
 				"header": Color("1a3fc4"),
@@ -77,13 +89,19 @@ static func spec(id: String) -> Dictionary:
 				"tab_unselected_bg": Color("e2e9f3"),
 				"tree_sel": Color("d9ecec"),
 				"status_bg": Color("e6ecf5"),
-				"btn_normal_tex": "res://assets/buttons/testpilot_buttons_008.png", "btn_normal_bg": Color.WHITE, "btn_normal_border": Color("d7dfeb"), "btn_normal_font": Color("1d2433"),
-				"btn_primary_tex": "res://assets/buttons/testpilot_buttons_002.png", "btn_primary_bg": Color("0e8f8f"), "btn_primary_border": Color("0e8f8f"), "btn_primary_font": Color.WHITE,
-				"btn_danger_tex": "res://assets/buttons/testpilot_buttons_014.png", "btn_danger_bg": Color("d21f2e"), "btn_danger_border": Color("d21f2e"), "btn_danger_font": Color.WHITE,
+				"btn_normal_tex": "res://assets/buttons/testpilot_buttons_008.png",
+				"btn_normal_margins": [24, 20],
+				"btn_normal_bg": Color.WHITE, "btn_normal_border": Color("d7dfeb"), "btn_normal_font": Color("1d2433"),
+				"btn_primary_tex": "res://assets/buttons/testpilot_buttons_002.png",
+				"btn_primary_margins": [24, 20],
+				"btn_primary_bg": Color("0e8f8f"), "btn_primary_border": Color("0e8f8f"), "btn_primary_font": Color.WHITE,
+				"btn_danger_tex": "res://assets/buttons/testpilot_buttons_014.png",
+				"btn_danger_margins": [24, 20],
+				"btn_danger_bg": Color("d21f2e"), "btn_danger_border": Color("d21f2e"), "btn_danger_font": Color.WHITE,
 			}
 
 
-## Pojedynczy kolor z aktywnego motywu (np. UITheme.color(id, "accent")).
+## Pojedynczy kolor z motywu (np. UITheme.color(id, "accent")).
 static func color(id: String, key: String) -> Color:
 	return spec(id)[key]
 
@@ -239,6 +257,7 @@ static func build(id: String = DEFAULT_THEME_ID) -> Theme:
 static func _setup_button(theme: Theme, type_name: String, s: Dictionary, kind: String, font: FontFile) -> void:
 	var tex_path: String = s["btn_%s_tex" % kind]
 	var font_color: Color = s["btn_%s_font" % kind]
+	var margins: Array = s.get("btn_%s_margins" % kind, [24, 20])
 	var states := {"normal": 1.0, "hover": 1.08, "pressed": 0.92, "disabled": 1.0, "focus": 1.0}
 	for state in states:
 		var mod: float = states[state]
@@ -246,11 +265,10 @@ static func _setup_button(theme: Theme, type_name: String, s: Dictionary, kind: 
 		if tex_path != "":
 			var sbt := StyleBoxTexture.new()
 			sbt.texture = load(tex_path)
-			# Marginesy ninepatch — rogi przycisków w pakiecie mają ok. 20 px promienia.
-			sbt.texture_margin_left = 24
-			sbt.texture_margin_right = 24
-			sbt.texture_margin_top = 20
-			sbt.texture_margin_bottom = 20
+			sbt.texture_margin_left = margins[0]
+			sbt.texture_margin_right = margins[0]
+			sbt.texture_margin_top = margins[1]
+			sbt.texture_margin_bottom = margins[1]
 			sbt.modulate_color = Color(mod, mod, mod, 0.45 if state == "disabled" else 1.0)
 			sb = sbt
 		else:

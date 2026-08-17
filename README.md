@@ -31,7 +31,7 @@ Projekt przygotowany w **Godot 4.4** (GDScript) i gotowy do eksportu do pliku `.
 
 ## Motywy graficzne
 
-W nagłówku okna jest przełącznik **Motyw** — do wyboru „TestPilot — jasny” (domyślny, zbudowany z pakietu assetów) i „Grafitowy — ciemny”. Wybór zapisuje się na dysku (`user://ustawienia.cfg`) i wraca po ponownym uruchomieniu.
+W nagłówku okna jest przełącznik **Motyw** — do wyboru „TestPilot — jasny” i „TestPilot — ciemny”. Oba zbudowane są z dostarczonego pakietu assetów (warianty light/dark: przyciski, ikony i kolorystyka okna). Zmiana działa natychmiast — podmieniane są też ikony na wariant pasujący do tła. Wybór zapisuje się na dysku (`user://ustawienia.cfg`) i wraca po ponownym uruchomieniu.
 
 ### Jak dodać własny motyw graficzny
 

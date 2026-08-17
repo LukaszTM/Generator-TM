@@ -94,10 +94,16 @@ func _init() -> void:
 	var bug_csv := BugReporter.to_csv([bug])
 	failures += _check(bug_csv.contains("ekran_logowania.png"), "raport błędów CSV z nazwą załącznika")
 
-	# 8. Motywy graficzne — każdy zdefiniowany motyw musi się zbudować.
+	# 8. Motywy graficzne — każdy motyw musi się zbudować, a wszystkie
+	# ikony logiczne muszą istnieć w jego wariancie assetów.
 	for t in UITheme.themes():
 		var built := UITheme.build(t["id"])
 		failures += _check(built != null and built.has_stylebox("panel", "Card"), "budowa motywu „%s”" % t["name"])
+		var missing: Array[String] = []
+		for icon_name in UITheme.ICONS_LIGHT:
+			if not ResourceLoader.exists(UITheme.icon_path(t["id"], icon_name)):
+				missing.append(icon_name)
+		failures += _check(missing.is_empty(), "ikony motywu „%s” (brakuje: %s)" % [t["name"], ", ".join(missing)])
 
 	# 9. Pełna generacja wszystkich modułów.
 	var out_all := TestGenerator.generate(modules, TestGenerator.Options.new())

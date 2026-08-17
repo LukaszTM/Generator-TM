@@ -16,6 +16,9 @@ var bugs: Array = []               # Array[BugReporter.BugReport]
 var pending_attachments: Array = []  # Array[BugReporter.Attachment] (formularz)
 var bug_counter := 0
 var current_theme_id := UITheme.DEFAULT_THEME_ID
+# Rejestr widżetów z ikonami — do podmiany ikon przy zmianie motywu.
+var icon_widgets: Array = []       # [{node, name}]
+var tab_icon_names: Array[String] = []
 
 # --- Węzły UI (tworzone w kodzie) ---
 var tabs: TabContainer
@@ -112,11 +115,12 @@ func _build_layout() -> void:
 	header_box.add_theme_constant_override("separation", 12)
 	header.add_child(header_box)
 	var logo := TextureRect.new()
-	logo.texture = load(UITheme.ICON_LOGO)
+	logo.texture = load(UITheme.icon_path(current_theme_id, "logo"))
 	logo.custom_minimum_size = Vector2(34, 34)
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	header_box.add_child(logo)
+	icon_widgets.append({"node": logo, "name": "logo"})
 	var title := Label.new()
 	title.theme_type_variation = "TitleLabel"
 	title.text = APP_TITLE
@@ -160,10 +164,10 @@ func _build_layout() -> void:
 	tabs.add_child(_build_bugs_tab())
 	# Tytuły ustawiane wprost — nazwy węzłów nie mogą zawierać kropki.
 	var tab_titles := ["1. Źródła", "2. Moduły i opcje", "3. Plan testów", "4. Przypadki testowe", "5. Eksport", "6. Raport błędów"]
-	var tab_icons := [UITheme.ICON_FOLDER, UITheme.ICON_FILTER, UITheme.ICON_DOC, UITheme.ICON_CLIPBOARD, UITheme.ICON_EXPORT, UITheme.ICON_SHIELD]
-	for i in tab_icons.size():
+	tab_icon_names = ["folder", "filter", "doc", "clipboard", "export", "shield"]
+	for i in tab_icon_names.size():
 		tabs.set_tab_title(i, tab_titles[i])
-		tabs.set_tab_icon(i, _tab_icon(tab_icons[i]))
+		tabs.set_tab_icon(i, _icon_tex(tab_icon_names[i]))
 	tabs.tab_changed.connect(_on_tab_changed)
 
 	# --- Pasek stanu ---
@@ -175,14 +179,15 @@ func _build_layout() -> void:
 	status_bar.add_child(status_label)
 
 
-func _tab_icon(path: String) -> Texture2D:
-	var img: Texture2D = load(path)
+## Mała ikona (20 px) dla przycisków i zakładek — z wariantu aktywnego motywu.
+func _icon_tex(icon_name: String) -> Texture2D:
+	var img: Texture2D = load(UITheme.icon_path(current_theme_id, icon_name))
 	var image := img.get_image()
 	image.resize(20, 20, Image.INTERPOLATE_LANCZOS)
 	return ImageTexture.create_from_image(image)
 
 
-func _card(title_text: String, icon_path: String = "") -> Array:
+func _card(title_text: String, icon_name: String = "") -> Array:
 	# Zwraca [PanelContainer, VBoxContainer-na-treść].
 	var card := PanelContainer.new()
 	card.theme_type_variation = "Card"
@@ -192,13 +197,14 @@ func _card(title_text: String, icon_path: String = "") -> Array:
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 8)
 	box.add_child(head)
-	if icon_path != "":
+	if icon_name != "":
 		var ic := TextureRect.new()
-		ic.texture = load(icon_path)
+		ic.texture = load(UITheme.icon_path(current_theme_id, icon_name))
 		ic.custom_minimum_size = Vector2(24, 24)
 		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		head.add_child(ic)
+		icon_widgets.append({"node": ic, "name": icon_name})
 	var lbl := Label.new()
 	lbl.theme_type_variation = "CardTitle"
 	lbl.text = title_text
@@ -206,13 +212,14 @@ func _card(title_text: String, icon_path: String = "") -> Array:
 	return [card, box]
 
 
-func _button(text: String, icon_path: String = "", variation: String = "") -> Button:
+func _button(text: String, icon_name: String = "", variation: String = "") -> Button:
 	var b := Button.new()
 	b.text = text
 	if variation != "":
 		b.theme_type_variation = variation
-	if icon_path != "":
-		b.icon = _tab_icon(icon_path)
+	if icon_name != "":
+		b.icon = _icon_tex(icon_name)
+		icon_widgets.append({"node": b, "name": icon_name})
 	return b
 
 
@@ -227,7 +234,7 @@ func _build_sources_tab() -> Control:
 	page.add_child(outer)
 
 	# Karta: dokumentacja
-	var doc_parts := _card("Dokumentacja aplikacji (zalecana)", UITheme.ICON_DOC)
+	var doc_parts := _card("Dokumentacja aplikacji (zalecana)", "doc")
 	outer.add_child(doc_parts[0])
 	var doc_box: VBoxContainer = doc_parts[1]
 	var doc_hint := Label.new()
@@ -242,10 +249,10 @@ func _build_sources_tab() -> Control:
 	doc_path_edit.placeholder_text = "np. C:\\projekty\\dokumentacja.md  albo  https://twoja-aplikacja.pl/docs"
 	doc_path_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	doc_row.add_child(doc_path_edit)
-	var doc_browse := _button("Wybierz plik…", UITheme.ICON_FOLDER)
+	var doc_browse := _button("Wybierz plik…", "folder")
 	doc_browse.pressed.connect(func() -> void: open_doc_dialog.popup_centered_ratio(0.7))
 	doc_row.add_child(doc_browse)
-	var doc_load := _button("Wczytaj", UITheme.ICON_DOC_DOWN, "PrimaryButton")
+	var doc_load := _button("Wczytaj", "doc_down", "PrimaryButton")
 	doc_load.pressed.connect(_on_load_doc)
 	doc_row.add_child(doc_load)
 	doc_status = Label.new()
@@ -261,7 +268,7 @@ func _build_sources_tab() -> Control:
 	doc_box.add_child(doc_preview)
 
 	# Karta: aplikacja testowana
-	var app_parts := _card("Aplikacja do testowania (opcjonalnie)", UITheme.ICON_PACKAGE)
+	var app_parts := _card("Aplikacja do testowania (opcjonalnie)", "package")
 	outer.add_child(app_parts[0])
 	var app_box: VBoxContainer = app_parts[1]
 	var app_hint := Label.new()
@@ -276,13 +283,13 @@ func _build_sources_tab() -> Control:
 	app_path_edit.placeholder_text = "np. C:\\projekty\\moja-aplikacja  albo  https://twoja-aplikacja.pl"
 	app_path_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	app_row.add_child(app_path_edit)
-	var app_browse_dir := _button("Folder…", UITheme.ICON_FOLDER)
+	var app_browse_dir := _button("Folder…", "folder")
 	app_browse_dir.pressed.connect(func() -> void: open_app_dir_dialog.popup_centered_ratio(0.7))
 	app_row.add_child(app_browse_dir)
-	var app_browse_file := _button("Plik…", UITheme.ICON_DOC)
+	var app_browse_file := _button("Plik…", "doc")
 	app_browse_file.pressed.connect(func() -> void: open_app_file_dialog.popup_centered_ratio(0.7))
 	app_row.add_child(app_browse_file)
-	var app_load := _button("Wczytaj", UITheme.ICON_DOC_DOWN, "PrimaryButton")
+	var app_load := _button("Wczytaj", "doc_down", "PrimaryButton")
 	app_load.pressed.connect(_on_load_app)
 	app_row.add_child(app_load)
 	app_status = Label.new()
@@ -295,7 +302,7 @@ func _build_sources_tab() -> Control:
 	var actions := HBoxContainer.new()
 	actions.alignment = BoxContainer.ALIGNMENT_END
 	outer.add_child(actions)
-	analyze_button = _button("Analizuj i wykryj moduły  →", UITheme.ICON_SEARCH, "PrimaryButton")
+	analyze_button = _button("Analizuj i wykryj moduły  →", "search", "PrimaryButton")
 	analyze_button.disabled = true
 	analyze_button.pressed.connect(_on_analyze)
 	actions.add_child(analyze_button)
@@ -308,7 +315,7 @@ func _build_modules_tab() -> Control:
 	page.name = "Moduly"
 	page.split_offset = 640
 
-	var left_parts := _card("Wykryte moduły — zaznacz, które przetestować", UITheme.ICON_FILTER)
+	var left_parts := _card("Wykryte moduły — zaznacz, które przetestować", "filter")
 	var left_card: PanelContainer = left_parts[0]
 	left_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page.add_child(left_card)
@@ -331,7 +338,7 @@ func _build_modules_tab() -> Control:
 	manual_module_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	manual_module_edit.text_submitted.connect(func(_t: String) -> void: _on_add_manual_module())
 	manual_row.add_child(manual_module_edit)
-	var manual_btn := _button("Dodaj moduł", UITheme.ICON_PENCIL)
+	var manual_btn := _button("Dodaj moduł", "pencil")
 	manual_btn.pressed.connect(_on_add_manual_module)
 	manual_row.add_child(manual_btn)
 	modules_tree = Tree.new()
@@ -349,7 +356,7 @@ func _build_modules_tab() -> Control:
 	modules_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(modules_tree)
 
-	var right_parts := _card("Opcje generowania", UITheme.ICON_GEAR)
+	var right_parts := _card("Opcje generowania", "gear")
 	var right_card: PanelContainer = right_parts[0]
 	page.add_child(right_card)
 	var right: VBoxContainer = right_parts[1]
@@ -389,7 +396,7 @@ func _build_modules_tab() -> Control:
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	right.add_child(spacer)
-	generate_button = _button("Generuj plan i przypadki  →", UITheme.ICON_CHECKLIST, "PrimaryButton")
+	generate_button = _button("Generuj plan i przypadki  →", "checklist", "PrimaryButton")
 	generate_button.disabled = true
 	generate_button.pressed.connect(_on_generate)
 	right.add_child(generate_button)
@@ -457,7 +464,7 @@ func _build_export_tab() -> Control:
 	var page := VBoxContainer.new()
 	page.name = "Eksport"
 	page.add_theme_constant_override("separation", 14)
-	var parts := _card("Zapis do pliku", UITheme.ICON_EXPORT)
+	var parts := _card("Zapis do pliku", "export")
 	page.add_child(parts[0])
 	var box: VBoxContainer = parts[1]
 
@@ -477,7 +484,7 @@ func _build_export_tab() -> Control:
 
 	var row := HBoxContainer.new()
 	box.add_child(row)
-	var save_btn := _button("Zapisz do pliku…", UITheme.ICON_EXPORT, "PrimaryButton")
+	var save_btn := _button("Zapisz do pliku…", "export", "PrimaryButton")
 	save_btn.pressed.connect(_on_export)
 	row.add_child(save_btn)
 	export_status = Label.new()
@@ -497,7 +504,7 @@ func _build_bugs_tab() -> Control:
 	var form_scroll := ScrollContainer.new()
 	form_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page.add_child(form_scroll)
-	var form_parts := _card("Nowe zgłoszenie błędu", UITheme.ICON_PENCIL)
+	var form_parts := _card("Nowe zgłoszenie błędu", "pencil")
 	var form_card: PanelContainer = form_parts[0]
 	form_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	form_scroll.add_child(form_card)
@@ -569,7 +576,7 @@ func _build_bugs_tab() -> Control:
 	var attach_row := HBoxContainer.new()
 	attach_row.add_theme_constant_override("separation", 8)
 	form.add_child(attach_row)
-	var attach_file_btn := _button("Dodaj z pliku…", UITheme.ICON_FOLDER)
+	var attach_file_btn := _button("Dodaj z pliku…", "folder")
 	attach_file_btn.pressed.connect(func() -> void: bug_attach_dialog.popup_centered_ratio(0.7))
 	attach_row.add_child(attach_file_btn)
 	var attach_hint := Label.new()
@@ -584,7 +591,7 @@ func _build_bugs_tab() -> Control:
 	var add_row := HBoxContainer.new()
 	add_row.alignment = BoxContainer.ALIGNMENT_END
 	form.add_child(add_row)
-	var add_bug_btn := _button("Dodaj zgłoszenie do raportu  →", UITheme.ICON_SHIELD, "PrimaryButton")
+	var add_bug_btn := _button("Dodaj zgłoszenie do raportu  →", "shield", "PrimaryButton")
 	add_bug_btn.pressed.connect(_on_add_bug)
 	add_row.add_child(add_bug_btn)
 
@@ -617,7 +624,7 @@ func _build_bugs_tab() -> Control:
 	var del_row := HBoxContainer.new()
 	del_row.add_theme_constant_override("separation", 8)
 	right.add_child(del_row)
-	var del_btn := _button("Usuń zaznaczone zgłoszenie", UITheme.ICON_FILTER, "DangerButton")
+	var del_btn := _button("Usuń zaznaczone zgłoszenie", "filter", "DangerButton")
 	del_btn.pressed.connect(_on_delete_bug)
 	del_row.add_child(del_btn)
 	bug_details = TextEdit.new()
@@ -635,7 +642,7 @@ func _build_bugs_tab() -> Control:
 	var exp_row := HBoxContainer.new()
 	exp_row.add_theme_constant_override("separation", 8)
 	right.add_child(exp_row)
-	var exp_btn := _button("Zapisz raport błędów…", UITheme.ICON_EXPORT, "PrimaryButton")
+	var exp_btn := _button("Zapisz raport błędów…", "export", "PrimaryButton")
 	exp_btn.pressed.connect(_on_export_bugs)
 	exp_row.add_child(exp_btn)
 	bug_export_status = Label.new()
@@ -720,9 +727,25 @@ func _apply_theme(id: String) -> void:
 	current_theme_id = id
 	theme = UITheme.build(id)
 	bg_rect.color = UITheme.color(id, "bg")
+	_refresh_icons()
 	# Odśwież kolory akcentów w już wypełnionych listach.
 	if output != null:
 		_fill_cases_tree()
+
+
+## Podmienia ikony wszystkich zarejestrowanych widżetów na wariant
+## (jasny/ciemny) aktywnego motywu.
+func _refresh_icons() -> void:
+	for entry in icon_widgets:
+		var node: Node = entry["node"]
+		if not is_instance_valid(node):
+			continue
+		if node is Button:
+			node.icon = _icon_tex(entry["name"])
+		elif node is TextureRect:
+			node.texture = load(UITheme.icon_path(current_theme_id, entry["name"]))
+	for i in tab_icon_names.size():
+		tabs.set_tab_icon(i, _icon_tex(tab_icon_names[i]))
 
 
 func _load_theme_setting() -> String:

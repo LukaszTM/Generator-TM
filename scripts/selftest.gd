@@ -100,7 +100,7 @@ func _init() -> void:
 		var built := UITheme.build(t["id"])
 		failures += _check(built != null and built.has_stylebox("panel", "Card"), "budowa motywu „%s”" % t["name"])
 		var missing: Array[String] = []
-		for icon_name in UITheme.ICONS_LIGHT:
+		for icon_name in UITheme.ICONS_MODERN:
 			if not ResourceLoader.exists(UITheme.icon_path(t["id"], icon_name)):
 				missing.append(icon_name)
 		failures += _check(missing.is_empty(), "ikony motywu „%s” (brakuje: %s)" % [t["name"], ", ".join(missing)])

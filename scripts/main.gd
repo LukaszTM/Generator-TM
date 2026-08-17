@@ -4,7 +4,7 @@ extends Control
 
 const APP_TITLE := "Generator TM"
 const APP_SUBTITLE := "plany testów i przypadki testowe"
-const VERSION := "1.2"
+const VERSION := "1.3"
 const SETTINGS_PATH := "user://ustawienia.cfg"
 
 # --- Stan aplikacji ---
@@ -127,12 +127,12 @@ func _build_layout() -> void:
 	header_box.add_child(title)
 	var subtitle := Label.new()
 	subtitle.text = "— " + APP_SUBTITLE
-	subtitle.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
+	subtitle.theme_type_variation = "HeaderDim"
 	subtitle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header_box.add_child(subtitle)
 	var theme_lbl := Label.new()
 	theme_lbl.text = "Motyw:"
-	theme_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
+	theme_lbl.theme_type_variation = "HeaderDim"
 	header_box.add_child(theme_lbl)
 	theme_select = OptionButton.new()
 	for t in UITheme.themes():
@@ -144,7 +144,7 @@ func _build_layout() -> void:
 	header_box.add_child(theme_select)
 	var version := Label.new()
 	version.text = "v" + VERSION
-	version.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	version.theme_type_variation = "HeaderDim"
 	header_box.add_child(version)
 
 	# --- Zakładki ---

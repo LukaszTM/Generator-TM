@@ -1,0 +1,53 @@
+{
+  "theme_name": "TestPilot Studio Modern Dark",
+  "reference": "Modern dark TestPilot Studio visualization generated in this conversation",
+  "palette": {
+    "bg": "#031122",
+    "bg2": "#061729",
+    "surface": "#09192C",
+    "surface2": "#0A1C2F",
+    "surface3": "#102236",
+    "surface4": "#182449",
+    "border": "#28374F",
+    "border_soft": "#1C2D44",
+    "text": "#EEF3FC",
+    "muted": "#91A0B6",
+    "accent": "#5750FF",
+    "accent2": "#3459F2",
+    "accent_hover": "#6760FF",
+    "accent_pressed": "#4740E5",
+    "accent_soft": "#282E74",
+    "blue": "#2F85FF",
+    "cyan": "#25C6FF",
+    "green": "#26D38B",
+    "yellow": "#F7C440",
+    "orange": "#FF972F",
+    "red": "#FF4A5B"
+  },
+  "radii": {
+    "small": 8,
+    "control": 10,
+    "card": 14,
+    "modal": 16,
+    "pill": 17
+  },
+  "spacing": [
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    32
+  ],
+  "font_recommendation": {
+    "family": "Inter",
+    "polish_chars": "supported",
+    "weights": [
+      "Regular 400",
+      "Medium 500",
+      "SemiBold 600"
+    ]
+  },
+  "godot": "4.x"
+}

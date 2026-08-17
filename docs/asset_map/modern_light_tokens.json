@@ -1,0 +1,53 @@
+{
+  "theme_name": "TestPilot Studio Modern Light",
+  "reference": "Light theme based on the modern TestPilot Studio visualization and derived asset pack",
+  "palette": {
+    "bg": "#F7F9FC",
+    "bg2": "#EFF3F8",
+    "surface": "#FFFFFF",
+    "surface2": "#F8FAFD",
+    "surface3": "#F1F5FB",
+    "surface4": "#E9EEF8",
+    "border": "#D8E1F0",
+    "border_soft": "#E6ECF5",
+    "text": "#182235",
+    "muted": "#62718A",
+    "accent": "#2563EB",
+    "accent2": "#3B82F6",
+    "accent_hover": "#1D4ED8",
+    "accent_pressed": "#1E40AF",
+    "accent_soft": "#DBEAFE",
+    "blue": "#3B82F6",
+    "cyan": "#06B6D4",
+    "green": "#16A34A",
+    "yellow": "#EAB308",
+    "orange": "#F59E0B",
+    "red": "#EF4444"
+  },
+  "radii": {
+    "small": 8,
+    "control": 10,
+    "card": 14,
+    "modal": 16,
+    "pill": 17
+  },
+  "spacing": [
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    32
+  ],
+  "font_recommendation": {
+    "family": "Inter",
+    "polish_chars": "supported",
+    "weights": [
+      "Regular 400",
+      "Medium 500",
+      "SemiBold 600"
+    ]
+  },
+  "godot": "4.x"
+}

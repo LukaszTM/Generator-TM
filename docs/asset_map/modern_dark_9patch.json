@@ -1,0 +1,44 @@
+{
+  "buttons/*": {
+    "left": 18,
+    "top": 18,
+    "right": 18,
+    "bottom": 18
+  },
+  "tabs/*": {
+    "left": 16,
+    "top": 14,
+    "right": 16,
+    "bottom": 14
+  },
+  "inputs/*": {
+    "left": 14,
+    "top": 14,
+    "right": 14,
+    "bottom": 14
+  },
+  "panels/card_*": {
+    "left": 20,
+    "top": 20,
+    "right": 20,
+    "bottom": 20
+  },
+  "panels/modal_*": {
+    "left": 24,
+    "top": 24,
+    "right": 24,
+    "bottom": 24
+  },
+  "window/top_toolbar*": {
+    "left": 20,
+    "top": 20,
+    "right": 20,
+    "bottom": 20
+  },
+  "notifications/*": {
+    "left": 18,
+    "top": 18,
+    "right": 18,
+    "bottom": 18
+  }
+}

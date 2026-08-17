@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://etwjowx54gbq"
-path="res://.godot/imported/button_primary_glossy.png-2f514f2f8afaa3f52b46d64356dc8ea3.ctex"
+uid="uid://cg8rumx0fldmy"
+path="res://.godot/imported/button_primary.png-adc09c9f0fd8a020f51219ed392de1b5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/modern_light/buttons/button_primary_glossy.png"
-dest_files=["res://.godot/imported/button_primary_glossy.png-2f514f2f8afaa3f52b46d64356dc8ea3.ctex"]
+source_file="res://assets/modern2_dark/buttons/button_primary.png"
+dest_files=["res://.godot/imported/button_primary.png-adc09c9f0fd8a020f51219ed392de1b5.ctex"]
 
 [params]
 

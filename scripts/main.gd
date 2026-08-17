@@ -4,7 +4,7 @@ extends Control
 
 const APP_TITLE := "Generator TM"
 const APP_SUBTITLE := "plany testów i przypadki testowe"
-const VERSION := "1.3"
+const VERSION := "1.4"
 const SETTINGS_PATH := "user://ustawienia.cfg"
 
 # --- Stan aplikacji ---

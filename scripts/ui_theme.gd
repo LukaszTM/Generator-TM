@@ -37,6 +37,8 @@ static func themes() -> Array[Dictionary]:
 	return [
 		{"id": "testpilot_jasny", "name": "TestPilot — jasny"},
 		{"id": "testpilot_ciemny", "name": "TestPilot — ciemny"},
+		{"id": "modern2_jasny", "name": "Modern 2 — jasny"},
+		{"id": "modern2_ciemny", "name": "Modern 2 — ciemny"},
 		{"id": "klasyczny_jasny", "name": "Klasyczny — jasny"},
 		{"id": "klasyczny_ciemny", "name": "Klasyczny — ciemny"},
 	]
@@ -89,6 +91,64 @@ static func spec(id: String) -> Dictionary:
 				"btn_normal_font": Color("eef3fc"),
 				"btn_primary_font": Color.WHITE,
 				"btn_danger_font": Color.WHITE,
+			}
+		"modern2_jasny":
+			# Pakiet Modern (cięty automatycznie), wariant jasny: kolory z arkuszy
+			# okna, błyszczące przyciski wycięte z pakietu, ikony konturowe modern.
+			return {
+				"name": "Modern 2 — jasny",
+				"icon_variant": "modern_light",
+				"bg": Color("eef2f8"),
+				"card": Color("fdfdfd"),
+				"header": Color("fdfdfd"),
+				"header_text": Color("1b2534"),
+				"accent": Color("006ffd"),
+				"text": Color("1b2534"),
+				"text_dim": Color("66738c"),
+				"border": Color("dfe6f0"),
+				"danger": Color("e23b47"),
+				"field_bg": Color("f5f9fe"),
+				"tab_unselected_bg": Color("e4eaf4"),
+				"tree_sel": Color("d6e8ff"),
+				"tree_sel_text": Color("1b2534"),
+				"status_bg": Color("eef2f8"),
+				"btn_normal_tex": "",
+				"btn_normal_bg": Color("ffffff"), "btn_normal_border": Color("dfe6f0"), "btn_normal_font": Color("1b2534"),
+				"btn_primary_tex": "res://assets/modern2_light/buttons/button_primary_glossy.png",
+				"btn_primary_margins": [20, 17],
+				"btn_primary_bg": Color("006ffd"), "btn_primary_border": Color("0057d6"), "btn_primary_font": Color.WHITE,
+				"btn_danger_tex": "res://assets/modern2_light/buttons/button_danger_glossy.png",
+				"btn_danger_margins": [20, 17],
+				"btn_danger_bg": Color("e23b47"), "btn_danger_border": Color("c22733"), "btn_danger_font": Color.WHITE,
+			}
+		"modern2_ciemny":
+			# Pakiet Modern (cięty automatycznie), wariant ciemny.
+			return {
+				"name": "Modern 2 — ciemny",
+				"icon_variant": "modern_dark",
+				"bg": Color("0f1728"),
+				"card": Color("172337"),
+				"header": Color("121e30"),
+				"header_text": Color("e8eef8"),
+				"accent": Color("3d89fc"),
+				"text": Color("e8eef8"),
+				"text_dim": Color("8fa0b8"),
+				"border": Color("2b3c58"),
+				"danger": Color("f0424f"),
+				"field_bg": Color("121f33"),
+				"tab_unselected_bg": Color("1a2740"),
+				"tree_sel": Color("1e3a66"),
+				"tree_sel_text": Color("e8eef8"),
+				"status_bg": Color("121e30"),
+				"btn_normal_tex": "res://assets/modern2_dark/buttons/button_normal.png",
+				"btn_normal_margins": [16, 14],
+				"btn_normal_bg": Color("2a3854"), "btn_normal_border": Color("2b3c58"), "btn_normal_font": Color("e8eef8"),
+				"btn_primary_tex": "res://assets/modern2_dark/buttons/button_primary.png",
+				"btn_primary_margins": [20, 17],
+				"btn_primary_bg": Color("2f6bff"), "btn_primary_border": Color("3d89fc"), "btn_primary_font": Color.WHITE,
+				"btn_danger_tex": "res://assets/modern2_dark/buttons/button_danger.png",
+				"btn_danger_margins": [14, 12],
+				"btn_danger_bg": Color("c42836"), "btn_danger_border": Color("f0424f"), "btn_danger_font": Color.WHITE,
 			}
 		"klasyczny_jasny":
 			# Paleta z docs/asset_map/classic_light_manifest.json
@@ -160,12 +220,9 @@ static func spec(id: String) -> Dictionary:
 				"status_bg": Color("eff3f8"),
 				"btn_normal_tex": "",
 				"btn_normal_bg": Color("ffffff"), "btn_normal_border": Color("d8e1f0"), "btn_normal_font": Color("182235"),
-				# Błyszczące przyciski wycięte z pakietu Modern (light).
-				"btn_primary_tex": "res://assets/modern_light/buttons/button_primary_glossy.png",
-				"btn_primary_margins": [20, 17],
+				"btn_primary_tex": "",
 				"btn_primary_bg": Color("2563eb"), "btn_primary_border": Color("1d4ed8"), "btn_primary_font": Color.WHITE,
-				"btn_danger_tex": "res://assets/modern_light/buttons/button_danger_glossy.png",
-				"btn_danger_margins": [20, 17],
+				"btn_danger_tex": "",
 				"btn_danger_bg": Color("ef4444"), "btn_danger_border": Color("dc2626"), "btn_danger_font": Color.WHITE,
 			}
 

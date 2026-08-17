@@ -31,10 +31,11 @@ Projekt przygotowany w **Godot 4.4** (GDScript) i gotowy do eksportu do pliku `.
 
 ## Motywy graficzne
 
-W nagłówku okna jest przełącznik **Motyw** z czterema wariantami zbudowanymi z pakietów assetów TestPilot Studio:
+W nagłówku okna jest przełącznik **Motyw** z sześcioma wariantami zbudowanymi z pakietów assetów TestPilot Studio:
 
 - **TestPilot — jasny** — nowoczesny, jasny wygląd: kolory z `style_tokens.json` pakietu Modern Light, ikony konturowe z pakietu (`assets/modern_light/`),
 - **TestPilot — ciemny** — pakiet Modern UI Dark (`assets/modern_dark/`): teksturowane przyciski primary/secondary/danger ze stanami, dropdowny, pola, karty, toolbar, tabele, checkboxy i paski przewijania,
+- **Modern 2 — jasny / ciemny** — pakiet Modern (cięty automatycznie): kolory zdjęte z arkuszy okna, błyszczące przyciski wycięte z pakietu (`assets/modern2_light/`, `assets/modern2_dark/`), ikony konturowe współdzielone z motywami TestPilot,
 - **Klasyczny — jasny / ciemny** — styl Windows 95/98 (`assets/classic_light/`, `assets/classic_dark/`): fazowane przyciski 9-slice ze stanami, klasyczne checkboxy, nagłówki tabel, pikselowe ikony 16/24/32 px i czcionka systemowa Tahoma (fallback Arial/Liberation Sans).
 
 Zmiana motywu działa natychmiast i podmienia także ikony na wariant pasujący do stylu (ikony są mapowane per motyw — nazwy logiczne w `ui_theme.gd`). Wybór zapisuje się w `user://ustawienia.cfg` i wraca po ponownym uruchomieniu. Palety i marginesy 9-patch pochodzą z manifestów pakietów w `docs/asset_map/`.

@@ -4,7 +4,7 @@ extends Control
 
 const APP_TITLE := "Generator TM"
 const APP_SUBTITLE := "plany testów i przypadki testowe"
-const VERSION := "1.7"
+const VERSION := "1.8"
 const SETTINGS_PATH := "user://ustawienia.cfg"
 
 # --- Stan aplikacji ---
@@ -270,7 +270,7 @@ func _build_sources_tab() -> Control:
 	var doc_box: VBoxContainer = doc_parts[1]
 	var doc_hint := Label.new()
 	doc_hint.theme_type_variation = "DimLabel"
-	doc_hint.text = "Wskaż plik na dysku (.md, .txt, .html, .json, .csv) albo wklej adres URL strony z dokumentacją.\nNie masz dokumentacji? Wystarczy samo źródło aplikacji poniżej — moduły wykryjemy ze struktury folderu lub strony, a brakujące dodasz ręcznie w zakładce 2."
+	doc_hint.text = "Wskaż plik na dysku (.md, .txt, .html, .pdf, .json, .csv) albo wklej adres URL strony z dokumentacją.\nNie masz dokumentacji? Wystarczy samo źródło aplikacji poniżej — moduły wykryjemy ze struktury folderu lub strony, a brakujące dodasz ręcznie w zakładce 2."
 	doc_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	doc_box.add_child(doc_hint)
 	var doc_row := HBoxContainer.new()
@@ -855,6 +855,7 @@ func _build_dialogs() -> void:
 		"*.md, *.markdown ; Pliki Markdown",
 		"*.txt ; Pliki tekstowe",
 		"*.html, *.htm ; Strony HTML",
+		"*.pdf ; Dokumenty PDF",
 		"*.json ; Pliki JSON",
 		"*.csv ; Pliki CSV",
 		"* ; Wszystkie pliki",

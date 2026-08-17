@@ -28,8 +28,16 @@ static func load_file(path: String) -> Result:
 		res.error = "Plik nie istnieje: %s" % path
 		return res
 	var ext := path.get_extension().to_lower()
-	if ext in ["pdf", "docx", "doc", "odt", "xlsx"]:
-		res.error = "Format .%s nie jest obsługiwany bezpośrednio. Zapisz dokumentację jako .txt, .md lub .html i wczytaj ponownie." % ext
+	if ext == "pdf":
+		var pdf := PdfReader.extract_file(path)
+		if not pdf["ok"]:
+			res.error = pdf["error"]
+			return res
+		res.text = pdf["text"]
+		res.ok = true
+		return res
+	if ext in ["docx", "doc", "odt", "xlsx"]:
+		res.error = "Format .%s nie jest obsługiwany bezpośrednio. Zapisz dokumentację jako .pdf, .txt, .md lub .html i wczytaj ponownie." % ext
 		return res
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
@@ -109,6 +117,15 @@ static func load_url(http: HTTPRequest, url: String) -> Result:
 		return res
 	if body.size() > MAX_URL_BYTES:
 		body = body.slice(0, MAX_URL_BYTES)
+	# PDF pobrany z adresu URL — rozpoznajemy po nagłówku pliku.
+	if body.size() > 4 and body.slice(0, 4).get_string_from_ascii() == "%PDF":
+		var pdf := PdfReader.extract_bytes(body)
+		if not pdf["ok"]:
+			res.error = pdf["error"]
+			return res
+		res.text = pdf["text"]
+		res.ok = true
+		return res
 	var text := body.get_string_from_utf8()
 	if text.strip_edges().is_empty():
 		res.error = "Pobrana treść jest pusta lub nie jest tekstem."

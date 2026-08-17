@@ -12,8 +12,10 @@ Projekt przygotowany w **Godot 4.4** (GDScript) i gotowy do eksportu do pliku `.
 ## Co potrafi program
 
 1. **Wczytanie dokumentacji** aplikacji:
-   - z dysku: pliki `.md`, `.txt`, `.html`/`.htm`, `.json`, `.csv`,
-   - z internetu: adres URL strony z dokumentacją (HTML jest automatycznie konwertowany na tekst).
+   - z dysku: pliki `.md`, `.txt`, `.html`/`.htm`, **`.pdf`**, `.json`, `.csv`,
+   - z internetu: adres URL strony z dokumentacją (HTML jest automatycznie konwertowany na tekst; adres prowadzący do pliku PDF też działa).
+   
+   Obsługa PDF jest wbudowana (czysty GDScript, bez zależności): dekompresja strumieni FlateDecode i mapy ToUnicode osadzonych czcionek, dzięki czemu **polskie znaki z PDF-ów z Worda/LibreOffice odczytują się poprawnie**. Nieobsługiwane pozostają PDF-y zaszyfrowane hasłem oraz skany bez warstwy tekstowej (wymagają OCR) — program pokaże wtedy czytelny komunikat.
 2. **Wskazanie aplikacji do testowania** (opcjonalnie, ta sama zasada — dysk lub link):
    - folder projektu — struktura katalogów podpowiada dodatkowe moduły,
    - plik aplikacji (np. `.exe`) — zapisywany w planie jako środowisko testowe,
@@ -117,5 +119,6 @@ przyklady/               przykładowa dokumentacja do szybkiego testu
 
 ## Ograniczenia
 
-- Formaty `.pdf`, `.docx` nie są czytane bezpośrednio — zapisz dokumentację jako `.txt`/`.md`/`.html` (np. „Zapisz jako” w Wordzie) i wczytaj ponownie.
+- Format `.docx` nie jest czytany bezpośrednio — zapisz dokumentację jako `.pdf`/`.txt`/`.md`/`.html` (np. „Zapisz jako” w Wordzie) i wczytaj ponownie.
+- PDF-y zaszyfrowane hasłem i skany bez warstwy tekstowej (obrazy) nie są obsługiwane — usuń hasło albo użyj OCR.
 - Generator jest regułowy (offline). Przypadki wygenerowane automatycznie warto przejrzeć — dokumentacja bywa niekompletna, a reguły nie zastąpią wiedzy testera.

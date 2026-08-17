@@ -155,7 +155,33 @@ func _init() -> void:
 	failures += _check(run_html.contains("Niezaliczone: 1") and run_html.contains(out.cases[1].id), "raport wykonania HTML")
 	failures += _check(RunReport.csv(out.cases, run_results).split("\n").size() == out.cases.size() + 1, "raport wykonania CSV")
 
-	# 12. Pełna generacja wszystkich modułów.
+	# 12. Ekstrakcja tekstu z PDF.
+	# a) Syntetyczny PDF bez kompresji (operatory Tj/TJ, sekwencje \ i ósemkowe).
+	var content := "BT /F1 12 Tf (Modul: Logowanie) Tj T* [(System ) (musi dzialac\\056)] TJ T* (Znaki \\(nawiasy\\)) Tj ET"
+	var simple_pdf := "%PDF-1.4\n1 0 obj << /Length " + str(content.length()) + " >> stream\n" + content + "\nendstream endobj\ntrailer\n%%EOF"
+	var pr := PdfReader.extract_bytes(simple_pdf.to_ascii_buffer())
+	failures += _check(pr["ok"] and pr["text"].contains("Modul: Logowanie") and pr["text"].contains("musi dzialac.") and pr["text"].contains("(nawiasy)"), "PDF: strumień bez kompresji + escape'y (%s)" % pr.get("error", ""))
+	# b) Syntetyczny PDF ze strumieniem FlateDecode.
+	var deflated := content.to_ascii_buffer().compress(FileAccess.COMPRESSION_DEFLATE)
+	var flate_head := "%PDF-1.4\n1 0 obj << /Filter /FlateDecode >> stream\n"
+	var flate_pdf := flate_head.to_ascii_buffer() + deflated + "\nendstream endobj\ntrailer\n%%EOF".to_ascii_buffer()
+	var pr2 := PdfReader.extract_bytes(flate_pdf)
+	failures += _check(pr2["ok"] and pr2["text"].contains("Modul: Logowanie"), "PDF: dekompresja FlateDecode (%s)" % pr2.get("error", ""))
+	# c) Prawdziwy PDF z osadzoną czcionką i polskimi znakami (ToUnicode).
+	var pdf_path := ProjectSettings.globalize_path("res://przyklady/przykladowa_dokumentacja.pdf")
+	if FileAccess.file_exists(pdf_path):
+		var res_pdf := DocLoader.load_file(pdf_path)
+		failures += _check(res_pdf.ok, "PDF: wczytanie przykładowego pliku (%s)" % res_pdf.error)
+		if res_pdf.ok:
+			failures += _check(res_pdf.text.contains("Logowanie i konta"), "PDF: tytuł modułu odczytany")
+			failures += _check(res_pdf.text.contains("ąćęłńóśźż"), "PDF: polskie znaki przez ToUnicode")
+			var pdf_modules := ModuleAnalyzer.analyze(res_pdf.text)
+			failures += _check(pdf_modules.size() >= 3, "PDF: wykrywanie modułów z tekstu (jest: %d)" % pdf_modules.size())
+	# d) Czytelny błąd dla pliku niebędącego PDF-em.
+	var not_pdf := PdfReader.extract_bytes("to nie jest pdf".to_ascii_buffer())
+	failures += _check(not not_pdf["ok"] and not_pdf["error"].contains("%PDF"), "PDF: komunikat dla złego pliku")
+
+	# 13. Pełna generacja wszystkich modułów.
 	var out_all := TestGenerator.generate(modules, TestGenerator.Options.new())
 	print("Moduły: %d | Przypadki (1 moduł): %d | Przypadki (wszystkie): %d" % [modules.size(), out.cases.size(), out_all.cases.size()])
 

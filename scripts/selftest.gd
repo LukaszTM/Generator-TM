@@ -94,7 +94,12 @@ func _init() -> void:
 	var bug_csv := BugReporter.to_csv([bug])
 	failures += _check(bug_csv.contains("ekran_logowania.png"), "raport błędów CSV z nazwą załącznika")
 
-	# 8. Pełna generacja wszystkich modułów.
+	# 8. Motywy graficzne — każdy zdefiniowany motyw musi się zbudować.
+	for t in UITheme.themes():
+		var built := UITheme.build(t["id"])
+		failures += _check(built != null and built.has_stylebox("panel", "Card"), "budowa motywu „%s”" % t["name"])
+
+	# 9. Pełna generacja wszystkich modułów.
 	var out_all := TestGenerator.generate(modules, TestGenerator.Options.new())
 	print("Moduły: %d | Przypadki (1 moduł): %d | Przypadki (wszystkie): %d" % [modules.size(), out.cases.size(), out_all.cases.size()])
 

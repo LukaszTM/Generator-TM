@@ -4,7 +4,8 @@ extends Control
 
 const APP_TITLE := "Generator TM"
 const APP_SUBTITLE := "plany testów i przypadki testowe"
-const VERSION := "1.0"
+const VERSION := "1.1"
+const SETTINGS_PATH := "user://ustawienia.cfg"
 
 # --- Stan aplikacji ---
 var doc_result: DocLoader.Result = null
@@ -14,10 +15,13 @@ var output: TestGenerator.Output = null
 var bugs: Array = []               # Array[BugReporter.BugReport]
 var pending_attachments: Array = []  # Array[BugReporter.Attachment] (formularz)
 var bug_counter := 0
+var current_theme_id := UITheme.DEFAULT_THEME_ID
 
 # --- Węzły UI (tworzone w kodzie) ---
 var tabs: TabContainer
 var status_label: Label
+var bg_rect: ColorRect
+var theme_select: OptionButton
 
 var doc_path_edit: LineEdit
 var doc_status: Label
@@ -71,7 +75,8 @@ var bug_save_dialog: FileDialog
 
 
 func _ready() -> void:
-	theme = UITheme.build()
+	current_theme_id = _load_theme_setting()
+	theme = UITheme.build(current_theme_id)
 
 	http = HTTPRequest.new()
 	add_child(http)
@@ -89,10 +94,10 @@ func _ready() -> void:
 #  BUDOWA INTERFEJSU
 # ============================================================
 func _build_layout() -> void:
-	var bg := ColorRect.new()
-	bg.color = UITheme.COLOR_BG
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(bg)
+	bg_rect = ColorRect.new()
+	bg_rect.color = UITheme.color(current_theme_id, "bg")
+	bg_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(bg_rect)
 
 	var root := VBoxContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -121,6 +126,18 @@ func _build_layout() -> void:
 	subtitle.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	subtitle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header_box.add_child(subtitle)
+	var theme_lbl := Label.new()
+	theme_lbl.text = "Motyw:"
+	theme_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
+	header_box.add_child(theme_lbl)
+	theme_select = OptionButton.new()
+	for t in UITheme.themes():
+		theme_select.add_item(t["name"])
+		theme_select.set_item_metadata(theme_select.item_count - 1, t["id"])
+		if t["id"] == current_theme_id:
+			theme_select.selected = theme_select.item_count - 1
+	theme_select.item_selected.connect(_on_theme_selected)
+	header_box.add_child(theme_select)
 	var version := Label.new()
 	version.text = "v" + VERSION
 	version.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
@@ -690,6 +707,43 @@ func _build_dialogs() -> void:
 
 
 # ============================================================
+#  MOTYWY
+# ============================================================
+func _on_theme_selected(index: int) -> void:
+	var id: String = theme_select.get_item_metadata(index)
+	_apply_theme(id)
+	_save_theme_setting(id)
+	_set_status("Zmieniono motyw na „%s”." % UITheme.spec(id)["name"])
+
+
+func _apply_theme(id: String) -> void:
+	current_theme_id = id
+	theme = UITheme.build(id)
+	bg_rect.color = UITheme.color(id, "bg")
+	# Odśwież kolory akcentów w już wypełnionych listach.
+	if output != null:
+		_fill_cases_tree()
+
+
+func _load_theme_setting() -> String:
+	var cfg := ConfigFile.new()
+	if cfg.load(SETTINGS_PATH) != OK:
+		return UITheme.DEFAULT_THEME_ID
+	var id: String = cfg.get_value("aplikacja", "motyw", UITheme.DEFAULT_THEME_ID)
+	for t in UITheme.themes():
+		if t["id"] == id:
+			return id
+	return UITheme.DEFAULT_THEME_ID
+
+
+func _save_theme_setting(id: String) -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(SETTINGS_PATH)  # zachowaj inne ustawienia, jeśli kiedyś dojdą
+	cfg.set_value("aplikacja", "motyw", id)
+	cfg.save(SETTINGS_PATH)
+
+
+# ============================================================
 #  LOGIKA
 # ============================================================
 func _set_status(text: String) -> void:
@@ -904,7 +958,7 @@ func _fill_cases_tree() -> void:
 			mi.set_selectable(1, false)
 			mi.set_selectable(2, false)
 			mi.set_selectable(3, false)
-			mi.set_custom_color(1, UITheme.COLOR_ACCENT)
+			mi.set_custom_color(1, UITheme.color(current_theme_id, "accent"))
 			module_items[c.module] = mi
 		var item := cases_tree.create_item(module_items[c.module])
 		item.set_text(0, c.id)

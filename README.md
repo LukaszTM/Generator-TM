@@ -29,6 +29,20 @@ Projekt przygotowany w **Godot 4.4** (GDScript) i gotowy do eksportu do pliku `.
    - `.md` — zrzuty zapisywane w podfolderze `<nazwa>_zalaczniki/` obok pliku,
    - `.csv` — tabela zgłoszeń (bez obrazów, z nazwami załączników).
 
+## Motywy graficzne
+
+W nagłówku okna jest przełącznik **Motyw** — do wyboru „TestPilot — jasny” (domyślny, zbudowany z pakietu assetów) i „Grafitowy — ciemny”. Wybór zapisuje się na dysku (`user://ustawienia.cfg`) i wraca po ponownym uruchomieniu.
+
+### Jak dodać własny motyw graficzny
+
+Motywy są zdefiniowane w `scripts/ui_theme.gd` jako proste specyfikacje. Aby podpiąć nowy pakiet assetów:
+
+1. Wgraj pliki do projektu, np. `assets/moj_motyw/` (przyciski PNG działają jako ninepatch — najlepiej zaokrąglone prostokąty ~220×70 px z rogami ok. 20 px).
+2. W `ui_theme.gd` dopisz wpis w `themes()`:
+   `{"id": "moj_motyw", "name": "Mój motyw"}`
+3. W `spec()` dodaj gałąź `"moj_motyw":` zwracającą słownik z kolorami (`bg`, `card`, `header`, `accent`, `text`, `text_dim`, `border`, `danger`, `field_bg`, `tab_unselected_bg`, `tree_sel`, `status_bg`) i przyciskami — dla każdego z trzech rodzajów (`normal`, `primary`, `danger`) podaj **albo** ścieżkę tekstury `btn_*_tex`, **albo** zostaw `""` i ustaw kolory `btn_*_bg` / `btn_*_border` / `btn_*_font` (przycisk będzie rysowany płasko).
+4. To wszystko — motyw pojawi się na liście, a selftest sprawdzi, czy się buduje.
+
 ## Praca bez dokumentacji
 
 Dokumentacja jest zalecana, ale **niewymagana**. Jeśli masz tylko aplikację:
